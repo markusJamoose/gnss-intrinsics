@@ -93,6 +93,36 @@
  }
 
 
+ /*!
+  *  \brief     Generates nominal NCO generation through LUT implementation
+  *  \details   This class is used to demonstrate a number of section commands.
+  *  \param[out] cVector Product vector storing the result of the multiplication
+  *  \param[in] aVector Source vector with factors to multiply
+  *  \param[in] bVector Source vector with factors to multiply
+  *  \param[in] num_points Number of points to Multiply in the operation
+  */
+
+  void avx2_nom_nco_si32(int32_t * sig_nco, const int32_t * LUT, const int blksize, const double remCarrPhase, const double carrFreq, const double sampFreq){
+
+    unsigned int carrPhaseBase = (remCarrPhase * (4294967296.0/ (2.0 * M_PI)) + 0.5);
+  	unsigned int carrStep = (carrFreq * (4294967296.0 / sampFreq) + 0.5);
+    unsigned int carrIndex = 0;
+    int inda;
+
+    // for each sample
+    for (inda = 0; inda < blksize; ++inda) {
+        // Obtain integer index in 8:24 number
+        carrIndex = (carrPhaseBase >> 24) & 0xFF ;
+        // Look in lut
+        sig_nco[inda] = LUT[carrIndex];
+
+        // Delta step
+        carrPhaseBase += carrStep ;
+    }
+
+  }
+
+
  static inline double avx2_mul_and_acc_si32(const int *aVector, const int *bVector, unsigned int num_points)
  {
 
