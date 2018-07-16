@@ -176,6 +176,7 @@ int main(){
 			pCode_vec[i] = *(caCode+pCode);
 			eCode_vec[i] = *(caCode+eCode);
 			lCode_vec[i] = *(caCode+lCode);
+
 		}
 
 		// Sine AVX2 NCO Look-up Table Implementation
