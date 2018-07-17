@@ -54,14 +54,13 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
       carr_freq * (4294967296.0 / samp_freq) + 0.5;
 
   // Declarations for serial implementation
-  unsigned int carrPhaseBase = 0;
-  unsigned int carrStep = 0;
-  unsigned int carrIndex = 0;
+  unsigned int serial_carr_phase_base = 0;
+  unsigned int serial_carr_idx = 0;
 
   // Important variable declarations
   __m256i carr_phase_base =
       _mm256_set1_epi32((rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5));
-  __m256i carr_step =
+  __m256i carr_step_base =
       _mm256_set_epi32(7 * nom_carr_step, 6 * nom_carr_step, 5 * nom_carr_step,
                        4 * nom_carr_step, 3 * nom_carr_step, 2 * nom_carr_step,
                        1 * nom_carr_step, 0 * nom_carr_step);
@@ -69,17 +68,20 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
   __m256i hex_ff =
       _mm256_set_epi32(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
   __m256i nco;
+  __m256i carr_steps;
 
   for (inda = 0; inda < eight_points; inda++) {
+    // Delta step
+    carr_steps = _mm256_set1_epi32(inda * 8 * nom_carr_step);
+    carr_steps = _mm256_add_epi32(carr_step_base, carr_steps);
+    carr_phase_base = _mm256_add_epi32(carr_phase_base, carr_steps);
+
     // Obtain integer index in 8:24 number
     carr_idx = _mm256_srli_si256(carr_phase_base, 24);
     carr_idx = _mm256_and_si256(carr_idx, hex_ff);
 
     // Look in lut
     nco = _mm256_i32gather_epi32(lut, carr_idx, 1);
-
-    // Delta step
-    carr_phase_base = _mm256_add_epi32(carr_phase_base, carr_step);
 
     // 5- Store values in output buffer
     _mm256_storeu_si256((__m256i *)sig_nco, nco);
@@ -89,15 +91,16 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
   }
 
   inda = eight_points * 8;
+  serial_carr_phase_base = _mm256_extract_epi32(carr_phase_base, 7);
 
   // generate buffer of output
   for (; inda < blk_size; ++inda) {
     // Obtain integer index in 8:24 number
-    carrIndex = (carrPhaseBase >> 24) & 0xFF;
+    serial_carr_idx = (serial_carr_phase_base >> 24) & 0xFF;
     // Look in lut
-    *sig_nco++ = lut[carrIndex]; // get sample value from LUT
+    *sig_nco++ = lut[serial_carr_idx]; // get sample value from LUT
     // Delta step
-    carrPhaseBase += carrStep;
+    serial_carr_phase_base += nom_carr_step;
   }
 }
 
