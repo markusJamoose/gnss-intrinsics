@@ -210,18 +210,14 @@ int main() {
       trigarg_vec[i] =
           (2.0 * pi * carrFreq * (i / samplingFreq)) + remCarrPhase;
       angle_vec[i] = (int)(trigarg_vec[i] * 10000) % 62832;
-      sin_nco_si32[i] = (int32_t)(round(8 * (gps_cos(angle_vec[i]))));
-      cos_nco_si32[i] = (int32_t)(round(8 * (gps_sin(angle_vec[i]))));
+      carrCos_vec[i] = (int32_t)(round(8 * (gps_cos(angle_vec[i]))));
+      carrSin_vec[i] = (int32_t)(round(8 * (gps_sin(angle_vec[i]))));
 
-      mixedcarrSin_vec[i] = sin_nco_si32[i] * rawSignal[i];
-      mixedcarrCos_vec[i] = cos_nco_si32[i] * rawSignal[i];
+      // Assuming real data (dataAdaptCoeff=1):
+      // Mix to baseband
+      mixedcarrSin_vec[i] = carrSin_vec[i] * (int32_t *)rawSignal[i];
+      mixedcarrCos_vec[i] = carrCos_vec[i] * (int32_t *)rawSignal[i];
     }
-
-    // Sine AVX2 NCO Look-up Table Implementation
-    // avx2_nom_nco_si32(sin_nco_si32, sin_LUT_si32, blksize, remCarrPhase,
-    //                   carrFreq, samplingFreq);
-    // avx2_nom_nco_si32(cos_nco_si32, cos_LUT_si32, blksize, remCarrPhase,
-    //                   carrFreq, samplingFreq);
 
     // Mix to baseband
     // avx2_si32_x2_mul_si32(mixedcarrSin_vec, sin_nco_si32, (int32_t
@@ -326,36 +322,34 @@ int main() {
     Q_E_output[loopcount] = Q_E;                       // Q_E
     Q_P_output[loopcount] = Q_P;                       // Q_P
     Q_L_output[loopcount] = Q_L;                       // Q_L
-
-  } // end for
+  }
 
   fclose(fpdata);
 
   // Write early, late, prompt values to bin files:-----------------------------
 
   // Write I_E_output to bin file
-  FILE *fp =
-      fopen("../plot/data_avx2_32i_add_mul_nom_lut/I_E_output.bin", "wb");
+  FILE *fp = fopen("../plot/data_avx2_32i_add_32i_mul/I_E_output.bin", "wb");
   fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
 
   // Write I_P_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut/I_P_output.bin", "wb");
+  fp = fopen("../plot/data_avx2_32i_add_32i_mul/I_P_output.bin", "wb");
   fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
 
   // Write I_L_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut/I_L_output.bin", "wb");
+  fp = fopen("../plot/data_avx2_32i_add_32i_mul/I_L_output.bin", "wb");
   fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
 
   // Write Q_E_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut/Q_E_output.bin", "wb");
+  fp = fopen("../plot/data_avx2_32i_add_32i_mul/Q_E_output.bin", "wb");
   fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
 
   // Write Q_P_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut/Q_P_output.bin", "wb");
+  fp = fopen("../plot/data_avx2_32i_add_32i_mul/Q_P_output.bin", "wb");
   fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
 
   // Write Q_L_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut/Q_L_output.bin", "wb");
+  fp = fopen("../plot/data_avx2_32i_add_32i_mul/Q_L_output.bin", "wb");
   fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
 
   //----------------------------------------------------------------------------
