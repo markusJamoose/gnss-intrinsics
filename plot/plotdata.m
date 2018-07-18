@@ -22,7 +22,7 @@ conf.sw_version = 'original LUT implementation';
 conf.comp_flags = 'none';
 conf.cpu_time = 'N/A';
 conf.data_proc = '5 s';
-conf.path = 'data_avx2_32i_add_32i_mul/';
+conf.path = 'data_avx2_32i_add_mul_avx_lut/';
 
 %% Read data from file
 %open the data file - this assumes that both this m-file and the

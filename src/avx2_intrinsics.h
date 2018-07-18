@@ -324,7 +324,7 @@ static inline void avx2_si32_x2_mul_si32(int *cVector, const int *aVector,
     // Multiply packed 16-bit integers in a and b, producing intermediate
     // signed 32-bit integers. Truncate each intermediate integer to the 18
     // most significant bits, round by adding 1, and store bits [16:1] to dst.
-    cVal = _mm256_mul_epi32(aVal, bVal);
+    cVal = _mm256_mullo_epi32(aVal, bVal);
 
     // Store 256-bits of integer data from a into memory. mem_addr does
     // not need to be aligned on any particular boundary.

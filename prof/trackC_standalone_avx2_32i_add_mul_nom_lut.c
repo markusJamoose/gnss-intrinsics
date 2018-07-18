@@ -191,6 +191,11 @@ int main() {
     int32_t lCode_vec[blksize];
     int32_t pCode_vec[blksize];
 
+    avx2_nom_nco_si32(sin_nco_si32, sin_LUT_si32, blksize, remCarrPhase,
+                      carrFreq, samplingFreq);
+    avx2_nom_nco_si32(cos_nco_si32, cos_LUT_si32, blksize, remCarrPhase,
+                      carrFreq, samplingFreq);
+
     // This loop is for parts of code I haven't brought out of loop or haven't
     // figured out how to
     for (i = 0; i < blksize; i++) {
@@ -215,21 +220,19 @@ int main() {
       // sin_nco_si32[i] = (int32_t)(round(8 * (gps_cos(angle_vec[i]))));
       // cos_nco_si32[i] = (int32_t)(round(8 * (gps_sin(angle_vec[i]))));
       //
-      // mixedcarrSin_vec[i] = sin_nco_si32[i] * rawSignal[i];
-      // mixedcarrCos_vec[i] = cos_nco_si32[i] * rawSignal[i];
+      mixedcarrSin_vec[i] = sin_nco_si32[i] * rawSignal[i];
+      mixedcarrCos_vec[i] = cos_nco_si32[i] * rawSignal[i];
     }
 
     // Sine AVX2 NCO Look-up Table Implementation
-    avx2_nom_nco_si32(sin_nco_si32, sin_LUT_si32, blksize, remCarrPhase,
-                      carrFreq, samplingFreq);
-    avx2_nom_nco_si32(cos_nco_si32, cos_LUT_si32, blksize, remCarrPhase,
-                      carrFreq, samplingFreq);
 
     // Mix to baseband
-    avx2_si32_x2_mul_si32(mixedcarrSin_vec, sin_nco_si32, (int32_t *)rawSignal,
-                          blksize);
-    avx2_si32_x2_mul_si32(mixedcarrCos_vec, cos_nco_si32, (int32_t *)rawSignal,
-                          blksize);
+    // avx2_si32_x2_mul_si32(mixedcarrSin_vec, sin_nco_si32, (int32_t
+    // *)rawSignal,
+    //                       blksize);
+    // avx2_si32_x2_mul_si32(mixedcarrCos_vec, cos_nco_si32, (int32_t
+    // *)rawSignal,
+    //                       blksize);
 
     // I_E
     double I_E = avx2_mul_and_acc_si32(eCode_vec, mixedcarrSin_vec, blksize);
