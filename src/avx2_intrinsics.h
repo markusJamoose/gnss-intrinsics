@@ -335,6 +335,11 @@ static inline void avx2_si32_x2_mul_si32(int *cVector, const int *aVector,
     bPtr += 8;
     cPtr += 8;
   }
+
+  number = eigthPoints * 8;
+  for (; number < num_points; number++) {
+    *cPtr++ = (*aPtr++) * (*bPtr++);
+  }
 }
 
 static inline void avx2_mul_short(short *cVector, const short *aVector,

@@ -116,28 +116,12 @@ int main() {
   double VSMIndex[codePeriods / vsmInterval];
   double VSMValue[codePeriods / vsmInterval];
 
-  const int lutSize = 256;       // [N=number of bits]
-  int32_t sin_LUT_si32[lutSize]; // our sine wave LUT
-  int32_t cos_LUT_si32[lutSize]; // our sine wave LUT
-  const float delta_phi =
-      (float)carrFreqBasis / samplingFreq * blksize; // phase increment
-
-  int16_t sig_nco_si16[blksize]; // output buffer
-  int32_t sig_nco_si32[blksize]; // output buffer
-  float sig_nco_fl32[blksize];   // output buffer
-
   // Allocate memory for the signal
   rawSignal = calloc(dataAdaptCoeff * blksize, sizeof(char));
 
   // Open the file for reading the data and fseek if required
   fpdata = fopen(fileid, "rb");
   fseek(fpdata, dataAdaptCoeff * seekvalue, SEEK_SET);
-
-  // Sine Look-up Table Generation
-  for (int i = 0; i < lutSize; ++i) {
-    sin_LUT_si32[i] = (int32_t)(10.0 * sinf(2.0f * pi * (float)i / lutSize));
-    cos_LUT_si32[i] = (int32_t)(10.0 * cosf(2.0f * pi * (float)i / lutSize));
-  }
 
   // START MAIN LOOP
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
@@ -180,13 +164,12 @@ int main() {
     double trigarg_vec[blksize];
     double angle_vec[blksize];
 
-    double carrCos_vec[blksize];
-    double carrSin_vec[blksize];
+    int32_t carrCos_vec[blksize];
+    int32_t carrSin_vec[blksize];
 
     int32_t mixedcarrSin_vec[blksize];
     int32_t mixedcarrCos_vec[blksize];
-    int32_t sin_nco_si32[blksize];
-    int32_t cos_nco_si32[blksize];
+
     int32_t eCode_vec[blksize];
     int32_t lCode_vec[blksize];
     int32_t pCode_vec[blksize];
@@ -194,6 +177,9 @@ int main() {
     // This loop is for parts of code I haven't brought out of loop or haven't
     // figured out how to
     for (i = 0; i < blksize; i++) {
+      // Find PRN Values:
+      baseCode = (i * codePhaseStep + remCodePhase);
+
       pCode = (int32_t)(baseCode) < baseCode ? (baseCode + 1) : baseCode;
       eCode = (int32_t)(baseCode - earlyLateSpc) < (baseCode - earlyLateSpc)
                   ? (baseCode - earlyLateSpc + 1)
@@ -215,17 +201,15 @@ int main() {
 
       // Assuming real data (dataAdaptCoeff=1):
       // Mix to baseband
-      mixedcarrSin_vec[i] = carrSin_vec[i] * (int32_t *)rawSignal[i];
-      mixedcarrCos_vec[i] = carrCos_vec[i] * (int32_t *)rawSignal[i];
+      // mixedcarrSin_vec[i] = carrSin_vec[i] * (int32_t)rawSignal[i];
+      // mixedcarrCos_vec[i] = carrCos_vec[i] * (int32_t)rawSignal[i];
     }
 
     // Mix to baseband
-    // avx2_si32_x2_mul_si32(mixedcarrSin_vec, sin_nco_si32, (int32_t
-    // *)rawSignal,
-    //                       blksize);
-    // avx2_si32_x2_mul_si32(mixedcarrCos_vec, cos_nco_si32, (int32_t
-    // *)rawSignal,
-    //                       blksize);
+    avx2_si32_x2_mul_si32(mixedcarrSin_vec, carrSin_vec, (int32_t *)rawSignal,
+                          blksize);
+    avx2_si32_x2_mul_si32(mixedcarrCos_vec, carrCos_vec, (int32_t *)rawSignal,
+                          blksize);
 
     // I_E
     double I_E = avx2_mul_and_acc_si32(eCode_vec, mixedcarrSin_vec, blksize);
