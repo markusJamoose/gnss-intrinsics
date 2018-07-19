@@ -22,7 +22,7 @@ conf.sw_version = 'original LUT implementation';
 conf.comp_flags = 'none';
 conf.cpu_time = 'N/A';
 conf.data_proc = '5 s';
-conf.path = 'data_avx2_32i_add_mul_lut/';
+conf.path = 'data_avx2_32i_add_mul_avx_lut/';
 
 %% Read data from file
 %open the data file - this assumes that both this m-file and the
@@ -34,24 +34,23 @@ conf.path = 'data_avx2_32i_add_mul_lut/';
 %format then that format must be specified below
 % (see 'help fread' from within Matlab)
 %--- Add path to find files
-addpath(conf.path);
 
-fid=fopen('Q_E_output.bin','rb');
+fid=fopen([conf.path,'/Q_E_output.bin'],'rb');
 data_Q_E=fread(fid,'double');
 
-fid=fopen('Q_P_output.bin','rb');
+fid=fopen([conf.path,'/Q_P_output.bin'],'rb');
 data_Q_P=fread(fid,'double');
 
-fid=fopen('Q_L_output.bin','rb');
+fid=fopen([conf.path,'/Q_L_output.bin'],'rb');
 data_Q_L=fread(fid,'double');
 
-fid=fopen('I_E_output.bin','rb');
+fid=fopen([conf.path,'/I_E_output.bin'],'rb');
 data_I_E=fread(fid,'double');
 
-fid=fopen('I_P_output.bin','rb');
+fid=fopen([conf.path,'/I_P_output.bin'],'rb');
 data_I_P=fread(fid,'double');
 
-fid=fopen('I_L_output.bin','rb');
+fid=fopen([conf.path,'/I_L_output.bin'],'rb');
 data_I_L=fread(fid,'double');
 
 %assume all has been read in correct and close the data file

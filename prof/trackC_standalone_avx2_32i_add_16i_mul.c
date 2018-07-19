@@ -55,32 +55,32 @@ int main(){
 
 	//Get all the vectors/integers/strings from .bin files
   double caCode[1025];
-  getcaCodeFromFile("data/caCode.bin", caCode);
-	blksize = getIntFromFile("data/blksize.bin");
-	codePhaseStep = getDoubleFromFile("data/codePhaseStep.bin");
-	remCodePhase = getDoubleFromFile("data/remCodePhase.bin");
-	earlyLateSpc = getDoubleFromFile("data/earlyLateSpc.bin");
-	samplingFreq = getDoubleFromFile("data/samplingFreq.bin");
-	remCarrPhase = getDoubleFromFile("data/remCarrPhase.bin");
-	carrFreq = getDoubleFromFile("data/carrFreq.bin");
-	char fileid[] = "GPS_and_GIOVE_A-NN-fs16_3676-if4_1304.bin";
-	seekvalue = getDoubleFromFile("data/skipvalue.bin");
-	tau1carr = getDoubleFromFile("data/tau1carr.bin");
-	tau2carr = getDoubleFromFile("data/tau2carr.bin");
-	PDIcarr = getDoubleFromFile("data/PDIcarr.bin");
-	carrFreqBasis = getDoubleFromFile("data/carrFreqBasis.bin");
-	tau1code = getDoubleFromFile("data/tau1code.bin");
-	tau2code = getDoubleFromFile("data/tau2code.bin");
-	PDIcode = getDoubleFromFile("data/PDIcode.bin");
+  getcaCodeFromFile("../data/caCode.bin", caCode);
+	blksize = getIntFromFile("../data/blksize.bin");
+	codePhaseStep = getDoubleFromFile("../data/codePhaseStep.bin");
+	remCodePhase = getDoubleFromFile("../data/remCodePhase.bin");
+	earlyLateSpc = getDoubleFromFile("../data/earlyLateSpc.bin");
+	samplingFreq = getDoubleFromFile("../data/samplingFreq.bin");
+	remCarrPhase = getDoubleFromFile("../data/remCarrPhase.bin");
+	carrFreq = getDoubleFromFile("../data/carrFreq.bin");
+	char fileid[] = "../data/GPS_and_GIOVE_A-NN-fs16_3676-if4_1304.bin";
+	seekvalue = getDoubleFromFile("../data/skipvalue.bin");
+	tau1carr = getDoubleFromFile("../data/tau1carr.bin");
+	tau2carr = getDoubleFromFile("../data/tau2carr.bin");
+	PDIcarr = getDoubleFromFile("../data/PDIcarr.bin");
+	carrFreqBasis = getDoubleFromFile("../data/carrFreqBasis.bin");
+	tau1code = getDoubleFromFile("../data/tau1code.bin");
+	tau2code = getDoubleFromFile("../data/tau2code.bin");
+	PDIcode = getDoubleFromFile("../data/PDIcode.bin");
 	codeFreq = 1023002.79220779; //getDoubleFromFile("text_data_files/codeFreq.bin");
 	codeFreqBasis = 1023002.79220779; //getDoubleFromFile("text_data_files/codeFreqBasis.bin");
-	codeLength = getDoubleFromFile("data/codeLength.bin");
-	codePeriods = (long int)getIntFromFile("data/codePeriods.bin");
+	codeLength = getDoubleFromFile("../data/codeLength.bin");
+	codePeriods = (long int)getIntFromFile("../data/codePeriods.bin");
 	//I removed the new line and added \n... this might cause issues
 	char trackingStatus[] = "Tracking: Ch 1 of 8 \n PRN:22";
-	dataAdaptCoeff = getIntFromFile("data/dataAdaptCoeff.bin");
-	vsmInterval = getIntFromFile("data/VSMinterval.bin");
-	accInt = getDoubleFromFile("data/accTime.bin");
+	dataAdaptCoeff = getIntFromFile("../data/dataAdaptCoeff.bin");
+	vsmInterval = getIntFromFile("../data/VSMinterval.bin");
+	accInt = getDoubleFromFile("../data/accTime.bin");
 
 	// Declare outputs
 	double carrFreq_output[codePeriods];
@@ -300,27 +300,27 @@ int main(){
 	// Write early, late, prompt values to bin files:-----------------------------
 
 	// Write I_E_output to bin file
-	FILE *fp = fopen("plot/data_avx2_32i_add_16i_mul/I_E_output.bin","wb");
+	FILE *fp = fopen("../plot/data_avx2_32i_add_16i_mul/I_E_output.bin","wb");
 	fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
 
 	// Write I_P_output to bin file
-	fp = fopen("plot/data_avx2_32i_add_16i_mul/I_P_output.bin","wb");
+	fp = fopen("../plot/data_avx2_32i_add_16i_mul/I_P_output.bin","wb");
 	fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
 
 	// Write I_L_output to bin file
-	fp = fopen("plot/data_avx2_32i_add_16i_mul/I_L_output.bin","wb");
+	fp = fopen("../plot/data_avx2_32i_add_16i_mul/I_L_output.bin","wb");
 	fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
 
 	// Write Q_E_output to bin file
-	fp = fopen("plot/data_avx2_32i_add_16i_mul/Q_E_output.bin","wb");
+	fp = fopen("../plot/data_avx2_32i_add_16i_mul/Q_E_output.bin","wb");
 	fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
 
 	// Write Q_P_output to bin file
-	fp = fopen("plot/data_avx2_32i_add_16i_mul/Q_P_output.bin","wb");
+	fp = fopen("../plot/data_avx2_32i_add_16i_mul/Q_P_output.bin","wb");
 	fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
 
 	// Write Q_L_output to bin file
-	fp = fopen("plot/data_avx2_32i_add_16i_mul/Q_L_output.bin","wb");
+	fp = fopen("../plot/data_avx2_32i_add_16i_mul/Q_L_output.bin","wb");
 	fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
 
 	//----------------------------------------------------------------------------

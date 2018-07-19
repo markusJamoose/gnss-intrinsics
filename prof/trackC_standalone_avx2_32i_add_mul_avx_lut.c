@@ -1,7 +1,10 @@
 /*
  * This file is a version of trackC.c in Dr. Akos's matlab GNSS SDR simulation
- * that runs without MATLAB.  This version also uses AVX2 intrinsic functions
- * with 16-bit integer addition and multiplication
+ that
+ * runs without MATLAB.  This version also uses AVX2 intrinsic functions with
+ * 32-bit integers for addition 16-bit for multiplication
+ * TODO: THIS CURRENTLY DOES NOT WORK
+
  *
  * Author: Jake Johnson
  * Date created: Jan 28, 2018
@@ -113,12 +116,28 @@ int main() {
   double VSMIndex[codePeriods / vsmInterval];
   double VSMValue[codePeriods / vsmInterval];
 
+  const int lutSize = 256;       // [N=number of bits]
+  int32_t sin_LUT_si32[lutSize]; // our sine wave LUT
+  int32_t cos_LUT_si32[lutSize]; // our sine wave LUT
+  const float delta_phi =
+      (float)carrFreqBasis / samplingFreq * blksize; // phase increment
+
+  int16_t sig_nco_si16[blksize]; // output buffer
+  int32_t sig_nco_si32[blksize]; // output buffer
+  float sig_nco_fl32[blksize];   // output buffer
+
   // Allocate memory for the signal
   rawSignal = calloc(dataAdaptCoeff * blksize, sizeof(char));
 
   // Open the file for reading the data and fseek if required
   fpdata = fopen(fileid, "rb");
   fseek(fpdata, dataAdaptCoeff * seekvalue, SEEK_SET);
+
+  // Sine Look-up Table Generation
+  for (int i = 0; i < lutSize; ++i) {
+    sin_LUT_si32[i] = (int32_t)(10.0 * sinf(2.0f * pi * (float)i / lutSize));
+    cos_LUT_si32[i] = (int32_t)(10.0 * cosf(2.0f * pi * (float)i / lutSize));
+  }
 
   // START MAIN LOOP
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
@@ -164,72 +183,66 @@ int main() {
     double carrCos_vec[blksize];
     double carrSin_vec[blksize];
 
-    short mixedcarrSin_vec[blksize];
-    short mixedcarrCos_vec[blksize];
+    int32_t mixedcarrSin_vec[blksize];
+    int32_t mixedcarrCos_vec[blksize];
+    int32_t sin_nco_si32[blksize];
+    int32_t cos_nco_si32[blksize];
+    int32_t eCode_vec[blksize];
+    int32_t lCode_vec[blksize];
+    int32_t pCode_vec[blksize];
 
-    short eCode_vec[blksize];
-    short lCode_vec[blksize];
-    short pCode_vec[blksize];
+    // Sine AVX2 NCO Look-up Table Implementation
+    avx2_nco_si32(sin_nco_si32, sin_LUT_si32, blksize, remCarrPhase, carrFreq,
+                  samplingFreq);
+    avx2_nco_si32(cos_nco_si32, cos_LUT_si32, blksize, remCarrPhase, carrFreq,
+                  samplingFreq);
 
     // This loop is for parts of code I haven't brought out of loop or haven't
     // figured out how to
     for (i = 0; i < blksize; i++) {
-      // Generate the carrier frequency to mix the signal to baseband
-      trigarg_vec[i] =
-          (2.0 * pi * carrFreq * (i / samplingFreq)) + remCarrPhase;
-      angle_vec[i] = (int)(trigarg_vec[i] * 10000) % 62832;
-      carrCos_vec[i] = (short)(round(8 * (gps_cos(angle_vec[i]))));
-      carrSin_vec[i] = (short)(round(8 * (gps_sin(angle_vec[i]))));
-
-      // Assuming real data (dataAdaptCoeff=1):
-      // Mix to baseband
-      mixedcarrSin_vec[i] = carrSin_vec[i] * rawSignal[i];
-      mixedcarrCos_vec[i] = carrCos_vec[i] * rawSignal[i];
-
       // Find PRN Values:
       baseCode = (i * codePhaseStep + remCodePhase);
-
-      /*
-      pCode_vec[i]	=
-      *(((short)((baseCode)<baseCode?(baseCode+1):baseCode))+caCode);//+caCode[i]);
-      eCode_vec[i]	=
-      *(((short)((baseCode-earlyLateSpc)<(baseCode-earlyLateSpc)?(baseCode-earlyLateSpc+1):(baseCode-earlyLateSpc)))+caCode);//+caCode[i]);
-      lCode_vec[i]	=
-      *(((short)((baseCode+earlyLateSpc)<(baseCode+earlyLateSpc)?(baseCode+earlyLateSpc+1):(baseCode+earlyLateSpc)))+caCode);//+caCode[i]);
-      */
-
-      pCode = (short)(baseCode) < baseCode ? (baseCode + 1) : baseCode;
-      eCode = (short)(baseCode - earlyLateSpc) < (baseCode - earlyLateSpc)
+      pCode = (int32_t)(baseCode) < baseCode ? (baseCode + 1) : baseCode;
+      eCode = (int32_t)(baseCode - earlyLateSpc) < (baseCode - earlyLateSpc)
                   ? (baseCode - earlyLateSpc + 1)
                   : (baseCode - earlyLateSpc);
-      lCode = (short)(baseCode + earlyLateSpc) < (baseCode + earlyLateSpc)
+      lCode = (int32_t)(baseCode + earlyLateSpc) < (baseCode + earlyLateSpc)
                   ? (baseCode + earlyLateSpc + 1)
                   : (baseCode + earlyLateSpc);
 
       pCode_vec[i] = *(caCode + pCode);
       eCode_vec[i] = *(caCode + eCode);
       lCode_vec[i] = *(caCode + lCode);
+
+      mixedcarrSin_vec[i] = sin_nco_si32[i] * rawSignal[i];
+      mixedcarrCos_vec[i] = cos_nco_si32[i] * rawSignal[i];
     }
 
-    // Now get early, late, and prompt values for each:-------------------------
+    // // Mix to baseband
+    // avx2_si32_x2_mul_si32(mixedcarrSin_vec, sin_nco_si32, (int32_t
+    // *)rawSignal,
+    //                       blksize);
+    // avx2_si32_x2_mul_si32(mixedcarrCos_vec, cos_nco_si32, (int32_t
+    // *)rawSignal,
+    //                       blksize);
 
     // I_E
-    double I_E = avx2_mul_and_acc_short(eCode_vec, mixedcarrSin_vec, blksize);
+    double I_E = avx2_mul_and_acc_si32(eCode_vec, mixedcarrSin_vec, blksize);
 
     // I_L
-    double I_L = avx2_mul_and_acc_short(lCode_vec, mixedcarrSin_vec, blksize);
+    double I_L = avx2_mul_and_acc_si32(lCode_vec, mixedcarrSin_vec, blksize);
 
     // I_P
-    double I_P = avx2_mul_and_acc_short(pCode_vec, mixedcarrSin_vec, blksize);
+    double I_P = avx2_mul_and_acc_si32(pCode_vec, mixedcarrSin_vec, blksize);
 
     // Q_E
-    double Q_E = avx2_mul_and_acc_short(eCode_vec, mixedcarrCos_vec, blksize);
+    double Q_E = avx2_mul_and_acc_si32(eCode_vec, mixedcarrCos_vec, blksize);
 
     // Q_L
-    double Q_L = avx2_mul_and_acc_short(lCode_vec, mixedcarrCos_vec, blksize);
+    double Q_L = avx2_mul_and_acc_si32(lCode_vec, mixedcarrCos_vec, blksize);
 
     // Q_P
-    double Q_P = avx2_mul_and_acc_short(pCode_vec, mixedcarrCos_vec, blksize);
+    double Q_P = avx2_mul_and_acc_si32(pCode_vec, mixedcarrCos_vec, blksize);
 
     //--------------------------------------------------------------------------
 
@@ -308,40 +321,36 @@ int main() {
     Q_E_output[loopcount] = Q_E;                       // Q_E
     Q_P_output[loopcount] = Q_P;                       // Q_P
     Q_L_output[loopcount] = Q_L;                       // Q_L
-  }
+
+  } // end for
 
   fclose(fpdata);
 
   // Write early, late, prompt values to bin files:-----------------------------
 
   // Write I_E_output to bin file
-  FILE *fp = fopen(
-      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_E_output.bin", "wb");
+  FILE *fp =
+      fopen("../plot/data_avx2_32i_add_mul_avx_lut/I_E_output.bin", "wb");
   fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
 
   // Write I_P_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_P_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_avx_lut/I_P_output.bin", "wb");
   fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
 
   // Write I_L_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_L_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_avx_lut/I_L_output.bin", "wb");
   fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
 
   // Write Q_E_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_E_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_avx_lut/Q_E_output.bin", "wb");
   fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
 
   // Write Q_P_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_P_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_avx_lut/Q_P_output.bin", "wb");
   fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
 
   // Write Q_L_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_L_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_avx_lut/Q_L_output.bin", "wb");
   fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
 
   //----------------------------------------------------------------------------
@@ -349,5 +358,4 @@ int main() {
   return 0;
 }
 
-// compile: gcc -g -mavx -march=haswell
-// trackC_standalone_avx2_16i_add_16i_mul_single_mulacc.c -lm
+// compile: gcc -g -mavx -march=haswell trackC_standalone_AVX2.c -lm
