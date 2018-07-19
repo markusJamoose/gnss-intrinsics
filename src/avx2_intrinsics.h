@@ -51,15 +51,15 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
   int inda;
   const unsigned int eight_points = blk_size / 8;
   const unsigned int nom_carr_step =
-      carr_freq * (4294967296.0 / samp_freq) + 0.5;
+      (unsigned int)(carr_freq * (4294967296.0 / samp_freq) + 0.5);
 
   // Declarations for serial implementation
-  unsigned int nom_carr_phase_base = 0;
+  unsigned int nom_carr_phase_base =
+      (unsigned int)(rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
   unsigned int nom_carr_idx = 0;
 
   // Important variable declarations
-  __m256i carr_phase_base =
-      _mm256_set1_epi32((rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5));
+  __m256i carr_phase_base = _mm256_set1_epi32(nom_carr_phase_base);
   __m256i carr_step_base =
       _mm256_set_epi32(7 * nom_carr_step, 6 * nom_carr_step, 5 * nom_carr_step,
                        4 * nom_carr_step, 3 * nom_carr_step, 2 * nom_carr_step,
@@ -74,16 +74,16 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
   carr_phase_base = _mm256_add_epi32(carr_phase_base, carr_step_base);
 
   for (inda = 0; inda < eight_points; inda++) {
-    // Obtain integer index in 8:24 number
-    carr_idx = _mm256_srli_si256(carr_phase_base, 24);
-    carr_idx = _mm256_and_si256(carr_idx, hex_ff);
+    // Shift packed 32-bit integers in a right by imm8 while shifting in zeros
+    carr_idx = _mm256_srli_epi32(carr_phase_base, 24);
+    // carr_idx = _mm256_and_si256(carr_idx, hex_ff);
 
     // Look in lut
-    nco = _mm256_i32gather_epi32(lut, carr_idx, 1);
+    nco = _mm256_i32gather_epi32(lut, carr_idx, 4);
 
     // Delta step
-    carr_step_base = _mm256_add_epi32(carr_step_base, carr_step_offset);
-    carr_phase_base = _mm256_add_epi32(carr_phase_base, carr_step_base);
+    // carr_step_base = _mm256_add_epi32(carr_step_base, carr_step_offset);
+    carr_phase_base = _mm256_add_epi32(carr_phase_base, carr_step_offset);
 
     // 5- Store values in output buffer
     _mm256_storeu_si256((__m256i *)sig_nco, nco);
@@ -93,7 +93,7 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
   }
 
   inda = eight_points * 8;
-  nom_carr_phase_base = _mm256_extract_epi32(carr_phase_base, 7);
+  nom_carr_phase_base = (unsigned int)_mm256_extract_epi32(carr_phase_base, 7);
 
   // generate buffer of output
   for (; inda < blk_size; ++inda) {
@@ -125,126 +125,22 @@ void avx2_nom_nco_si32(int32_t *sig_nco, const int32_t *LUT, const int blksize,
   unsigned int carrIndex = 0;
   int inda;
 
-  // for each sample
-  for (inda = 0; inda < blksize; ++inda) {
-    // Obtain integer index in 8:24 number
-    carrIndex = (carrPhaseBase >> 24) & 0xFF;
-    // Look in lut
-    sig_nco[inda] = LUT[carrIndex];
-
-    // Delta step
-    carrPhaseBase += carrStep;
-  }
-}
-
-void avx2_nom_nco_fl32(float *sig_nco, const float *LUT, const int blksize,
-                       const double remCarrPhase, const double carrFreq,
-                       const double sampFreq) {
-
-  unsigned int carrPhaseBase =
-      (remCarrPhase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
-  unsigned int carrStep = (carrFreq * (4294967296.0 / sampFreq) + 0.5);
-  unsigned int carrIndex = 0;
-  int inda;
+  // Store this values for debug purposes only
+  unsigned int carrPhaseBaseVec[blksize];
+  unsigned int carrIndexVec[blksize];
 
   // for each sample
   for (inda = 0; inda < blksize; ++inda) {
     // Obtain integer index in 8:24 number
+    carrIndexVec[inda] = carrIndex;
     carrIndex = (carrPhaseBase >> 24) & 0xFF;
+
     // Look in lut
     sig_nco[inda] = LUT[carrIndex];
 
     // Delta step
+    carrPhaseBaseVec[inda] = carrPhaseBase;
     carrPhaseBase += carrStep;
-  }
-}
-
-static inline float avx2_mul_and_acc_fl32(const float *aVector,
-                                          const float *bVector,
-                                          unsigned int num_points) {
-
-  float returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int eigthPoints = num_points / 8;
-
-  const float *aPtr = aVector;
-  const float *bPtr = bVector;
-  float tempBuffer[8];
-
-  __m256 aVal, bVal, cVal;
-  __m256 accumulator = _mm256_setzero_ps();
-
-  for (; number < eigthPoints; number++) {
-
-    // Load 256-bits of integer data from memory into dst. mem_addr does not
-    // need to be aligned on any particular boundary.
-    aVal = _mm256_loadu_ps((float *)aPtr);
-    bVal = _mm256_loadu_ps((float *)bPtr);
-
-    // TODO: More efficient way to exclude having this intermediate cVal
-    // variable??
-    cVal = _mm256_mul_ps(aVal, bVal);
-
-    // accumulator += _mm256_mullo_epi16(aVal, bVal);
-    accumulator = _mm256_add_ps(accumulator, cVal);
-
-    // Increment pointers
-    aPtr += 8;
-    bPtr += 8;
-  }
-
-  _mm256_storeu_ps((float *)tempBuffer, accumulator);
-
-  returnValue = tempBuffer[0];
-  returnValue += tempBuffer[1];
-  returnValue += tempBuffer[2];
-  returnValue += tempBuffer[3];
-  returnValue += tempBuffer[4];
-  returnValue += tempBuffer[5];
-  returnValue += tempBuffer[6];
-  returnValue += tempBuffer[7];
-
-  // Perform non SIMD leftover operations
-  number = eigthPoints * 8;
-  for (; number < num_points; number++) {
-    returnValue += (*aPtr++) * (*bPtr++);
-  }
-  return returnValue;
-}
-
-static inline void avx2_fl32_x2_mul_fl32(float *cVector, const float *aVector,
-                                         const float *bVector,
-                                         unsigned int num_points) {
-
-  unsigned int number = 0;
-  const unsigned int eigthPoints = num_points / 8;
-
-  float *cPtr = cVector;
-  const float *aPtr = aVector;
-  const float *bPtr = bVector;
-
-  __m256 aVal, bVal, cVal;
-
-  for (; number < eigthPoints; number++) {
-
-    // Load 256-bits of integer data from memory into dst. mem_addr does not
-    // need to be aligned on any particular boundary.
-    aVal = _mm256_loadu_ps((float *)aPtr);
-    bVal = _mm256_loadu_ps((float *)bPtr);
-
-    // Multiply packed 16-bit integers in a and b, producing intermediate
-    // signed 32-bit integers. Truncate each intermediate integer to the 18
-    // most significant bits, round by adding 1, and store bits [16:1] to dst.
-    cVal = _mm256_mul_ps(aVal, bVal);
-
-    // Store 256-bits of integer data from a into memory. mem_addr does
-    // not need to be aligned on any particular boundary.
-    _mm256_storeu_ps((float *)cPtr, cVal);
-
-    // Increment pointers
-    aPtr += 8;
-    bPtr += 8;
-    cPtr += 8;
   }
 }
 
@@ -272,7 +168,7 @@ static inline double avx2_mul_and_acc_si32(const int *aVector,
 
     // TODO: More efficient way to exclude having this intermediate cVal
     // variable??
-    cVal = _mm256_mul_epi32(aVal, bVal);
+    cVal = _mm256_mullo_epi32(aVal, bVal);
 
     // accumulator += _mm256_mullo_epi16(aVal, bVal);
     accumulator = _mm256_add_epi32(accumulator, cVal);
