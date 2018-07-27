@@ -18,11 +18,11 @@ clear;
 
 %% File configuration settings
 %--- File configuration settings
-conf.sw_version = 'original LUT implementation';
+conf.sw_version = 'fl32 LUT implementation';
 conf.comp_flags = 'none';
 conf.cpu_time = 'N/A';
 conf.data_proc = '5 s';
-conf.path = 'data_avx2_32i_add_mul_avx_lut_code/';
+conf.path = 'data_avx2_fl32_add_mul_avx_lut_code/';
 
 %% Read data from file
 %open the data file - this assumes that both this m-file and the
