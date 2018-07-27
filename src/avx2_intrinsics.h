@@ -144,6 +144,122 @@ void avx2_nom_nco_si32(int32_t *sig_nco, const int32_t *LUT, const int blksize,
   }
 }
 
+void avx2_nom_code_si32(int32_t *ecode, int32_t *pcode, int32_t *lcode,
+                        const int32_t *cacode, const int blksize,
+                        const double remCodePhase, const double codeFreq,
+                        const double sampFreq) {
+
+  int inda;
+  double earlyLateSpc = 0.5;
+  double codePhaseStep = codeFreq / sampFreq;
+  double baseCode;
+  int pCodeIdx, eCodeIdx, lCodeIdx;
+
+  // for each sample
+  for (inda = 0; inda < blksize; ++inda) {
+    baseCode = (inda * codePhaseStep + remCodePhase);
+    pCodeIdx = (int32_t)(baseCode) < baseCode ? (baseCode + 1) : baseCode;
+    eCodeIdx = (int32_t)(baseCode - earlyLateSpc) < (baseCode - earlyLateSpc)
+                   ? (baseCode - earlyLateSpc + 1)
+                   : (baseCode - earlyLateSpc);
+    lCodeIdx = (int32_t)(baseCode + earlyLateSpc) < (baseCode + earlyLateSpc)
+                   ? (baseCode + earlyLateSpc + 1)
+                   : (baseCode + earlyLateSpc);
+
+    ecode[inda] = *(cacode + eCodeIdx);
+    pcode[inda] = *(cacode + pCodeIdx);
+    lcode[inda] = *(cacode + lCodeIdx);
+  }
+
+  //  FILE *ft =
+  //  fopen("plot/data_avx2_32i_add_mul_avx_lut/carrPhaseBaseVec.bin", "wb");
+  //  fwrite(carrPhaseBaseVec, sizeof *carrPhaseBaseVec, blksize, ft);
+  //  fclose(ft);
+  //
+  //  ft = fopen("plot/data_avx2_32i_add_mul_avx_lut/carrIndexVec.bin", "wb");
+  //  fwrite(carrIndexVec, sizeof *carrIndexVec, blksize, ft);
+  //  fclose(ft);
+}
+
+void avx2_code_si32(int32_t *ecode, int32_t *pcode, int32_t *lcode,
+                    const int32_t *cacode, const int blksize,
+                    const float remCodePhase, const float codeFreq,
+                    const float sampFreq) {
+
+  int inda;
+  const unsigned int eight_points = blksize / 8;
+  float earlyLateSpc = 0.5;
+  float codePhaseStep = codeFreq / sampFreq;
+  float baseCode;
+  int pCodeIdx, eCodeIdx, lCodeIdx;
+
+  // Important variable declarations
+  __m256 ecode_phase_base = _mm256_set1_ps(remCodePhase - earlyLateSpc + 0.5);
+  __m256 pcode_phase_base = _mm256_set1_ps(remCodePhase + 0.5);
+  __m256 lcode_phase_base = _mm256_set1_ps(remCodePhase + earlyLateSpc + 0.5);
+
+  __m256 code_step_base =
+      _mm256_set_ps(7 * codePhaseStep, 6 * codePhaseStep, 5 * codePhaseStep,
+                    4 * codePhaseStep, 3 * codePhaseStep, 2 * codePhaseStep,
+                    1 * codePhaseStep, 0 * codePhaseStep);
+  __m256i ecode_idx = _mm256_set1_epi32(0);
+  __m256i pcode_idx = _mm256_set1_epi32(0);
+  __m256i lcode_idx = _mm256_set1_epi32(0);
+
+  __m256i elut, plut, llut;
+  __m256 code_step_offset = _mm256_set1_ps(8 * codePhaseStep);
+
+  // First iteration happens outside the loop
+  ecode_phase_base = _mm256_add_ps(ecode_phase_base, code_step_base);
+  pcode_phase_base = _mm256_add_ps(pcode_phase_base, code_step_base);
+  lcode_phase_base = _mm256_add_ps(lcode_phase_base, code_step_base);
+
+  for (inda = 0; inda < eight_points; inda++) {
+    // Obtain integer index in 8:24 number
+    ecode_idx = _mm256_cvtps_epi32(ecode_phase_base);
+    pcode_idx = _mm256_cvtps_epi32(pcode_phase_base);
+    lcode_idx = _mm256_cvtps_epi32(lcode_phase_base);
+
+    // Look in lut
+    elut = _mm256_i32gather_epi32(cacode, ecode_idx, 4);
+    plut = _mm256_i32gather_epi32(cacode, pcode_idx, 4);
+    llut = _mm256_i32gather_epi32(cacode, lcode_idx, 4);
+
+    // Delta step
+    ecode_phase_base = _mm256_add_ps(ecode_phase_base, code_step_offset);
+    pcode_phase_base = _mm256_add_ps(pcode_phase_base, code_step_offset);
+    lcode_phase_base = _mm256_add_ps(lcode_phase_base, code_step_offset);
+
+    // 5- Store values in output buffer
+    _mm256_storeu_si256((__m256i *)ecode, elut);
+    _mm256_storeu_si256((__m256i *)pcode, plut);
+    _mm256_storeu_si256((__m256i *)lcode, llut);
+
+    // 6- Update pointers
+    ecode += 8;
+    pcode += 8;
+    lcode += 8;
+  }
+
+  inda = eight_points * 8;
+
+  // generate buffer of output
+  for (; inda < blksize; ++inda) {
+    baseCode = (inda * codePhaseStep + remCodePhase);
+    pCodeIdx = (int32_t)(baseCode) < baseCode ? (baseCode + 1) : baseCode;
+    eCodeIdx = (int32_t)(baseCode - earlyLateSpc) < (baseCode - earlyLateSpc)
+                   ? (baseCode - earlyLateSpc + 1)
+                   : (baseCode - earlyLateSpc);
+    lCodeIdx = (int32_t)(baseCode + earlyLateSpc) < (baseCode + earlyLateSpc)
+                   ? (baseCode + earlyLateSpc + 1)
+                   : (baseCode + earlyLateSpc);
+
+    ecode[inda] = *(cacode + eCodeIdx);
+    pcode[inda] = *(cacode + pCodeIdx);
+    lcode[inda] = *(cacode + lCodeIdx);
+  }
+}
+
 static inline double avx2_mul_and_acc_si32(const int *aVector,
                                            const int *bVector,
                                            unsigned int num_points) {
