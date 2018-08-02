@@ -388,15 +388,6 @@ void avx2_nom_nco_fl32(float *sig_nco, const float *LUT, const int blksize,
     carrPhaseBaseVec[inda] = carrPhaseBase;
     carrPhaseBase += carrStep;
   }
-
-  FILE *ft =
-      fopen("plot/data_avx2_32i_add_mul_avx_lut/carrPhaseBaseVec.bin", "wb");
-  fwrite(carrPhaseBaseVec, sizeof *carrPhaseBaseVec, blksize, ft);
-  fclose(ft);
-
-  ft = fopen("plot/data_avx2_32i_add_mul_avx_lut/carrIndexVec.bin", "wb");
-  fwrite(carrIndexVec, sizeof *carrIndexVec, blksize, ft);
-  fclose(ft);
 }
 
 /*!
