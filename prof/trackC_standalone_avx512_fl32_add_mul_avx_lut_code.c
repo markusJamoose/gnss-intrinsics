@@ -1,14 +1,7 @@
-/*
- * This file is a version of trackC.c in Dr. Akos's matlab GNSS SDR simulation
- that
- * runs without MATLAB.  This version also uses AVX2 intrinsic functions with
- * 32-bit integers for addition 16-bit for multiplication
- * TODO: THIS CURRENTLY DOES NOT WORK
-
- *
- * Author: Jake Johnson
- * Date created: Jan 28, 2018
- * Last Modified: Jan 29, 2018
+/*!
+ * \file trackC_standalone_avx512_fl32_add_mul_lut_code.h
+ * \brief  Test avx512 functionalities for code profiling
+ * \author Damian Miralles, 2018. damian.miralles@colorado.edu
  *
  */
 
