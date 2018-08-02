@@ -231,7 +231,7 @@ void avx512_code_fl32(float *ecode, float *pcode, float *lcode,
   __m512i lcode_idx = _mm512_set1_epi32(0);
 
   __m512 elut, plut, llut;
-  __m512 code_step_offset = _mm512_set1_ps(8 * codePhaseStep);
+  __m512 code_step_offset = _mm512_set1_ps(16 * codePhaseStep);
 
   // First iteration happens outside the loop
   ecode_phase_base = _mm512_add_ps(ecode_phase_base, code_step_base);
