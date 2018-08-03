@@ -300,7 +300,7 @@ static inline double avx512_mul_and_acc_si32(const int *aVector,
 
   const int *aPtr = aVector;
   const int *bPtr = bVector;
-  float tempBuffer[16];
+  int tempBuffer[16];
 
   __m512i aVal, bVal, cVal;
   __m512i accumulator = _mm512_setzero_si512();
