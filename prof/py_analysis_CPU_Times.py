@@ -21,11 +21,18 @@ import re
 CPU_Times = []
 
 f= open("guru99.txt","w+")
-exe = ["reg_standalone", "avx_si32_avx2", "nom_si32_avx2", "avx_fl32_avx2", "nom_fl32_avx2", "avx_si32_avx512", "nom_si32_avx512", "avx_fl32_avx512", "nom_fl32_avx512"]
-for j in range(0,8)
+exe = ["avx_si32_avx2", "nom_si32_avx2", "avx_fl32_avx2", "nom_fl32_avx2", "avx_si32_avx512", "nom_si32_avx512", "avx_fl32_avx512", "nom_fl32_avx512", "reg_standalone"]
+for j in range(0,9):
+    print("Running: ")
+    print(exe[j])
+    print("\n")
+    # Reset CPU Times to store only latest results
+    CPU_Times = []
     for i in range(0,50):
+	base_command = """/opt/intel/vtune_amplifier_2018.1.0.535340/bin64/amplxe-cl -collect hotspots -quiet -knob sampling-interval=1 -app-working-dir /home/gnssi9/dami7269/gnss-intrinsics/prof/ -- /home/gnssi9/dami7269/gnss-intrinsics/prof/"""
+	command = base_command + exe[j]
 
-        output = subprocess.check_output("""/opt/intel/vtune_amplifier_2018.1.0.535340/bin64/amplxe-cl -collect hotspots -quiet -knob sampling-interval=1 -app-working-dir /home/gnssi9/dami7269/gnss-intrinsics/prof/ -- /home/gnssi9/dami7269/gnss-intrinsics/prof/a.out""", shell=True)
+        output = subprocess.check_output(command, shell=True)
 
         # Go through output add desired values to array
         for line in output.splitlines():
@@ -46,9 +53,8 @@ for j in range(0,8)
     print("minimum_CPU_Times: " + str(minimum_CPU_Times))
 
     f.write(exe[j])
-    f.write("\n")
-    f.write(CPU_Times)
-    f.write("\n")
+    f.write(str(CPU_Times))
+    f.write("\n\n")
 
 f.close()
 # Code derived from:
