@@ -1,14 +1,7 @@
-/*
- * This file is a version of trackC.c in Dr. Akos's matlab GNSS SDR simulation
- that
- * runs without MATLAB.  This version also uses AVX2 intrinsic functions with
- * 32-bit integers for addition 16-bit for multiplication
- * TODO: THIS CURRENTLY DOES NOT WORK
-
- *
- * Author: Jake Johnson
- * Date created: Jan 28, 2018
- * Last Modified: Jan 29, 2018
+/*!
+ * \file trackC_standalone_avx512_fl32_add_mul_lut_code.h
+ * \brief  Test avx512 functionalities for code profiling
+ * \author Damian Miralles, 2018. damian.miralles@colorado.edu
  *
  */
 
@@ -29,8 +22,8 @@ int main() {
 
   // Declarations
 
-  int i, loopcount, angle, blksize, pCode, eCode, lCode, channelNr,
-      totalChannels;
+  int i, loopcount, angle, blksize, pCode, eCode, lCode;
+
   int vsmCount, vsmInterval, PRN, dataAdaptCoeff;
   double remCodePhase, remCarrPhase, codePhaseStep;
   double earlyLateSpc, seekvalue, samplingFreq, trigarg, carrCos, carrSin,
@@ -44,13 +37,11 @@ int main() {
   double codeFreq, codeFreqBasis, carrFreqBasis, absoluteSample, codeLength;
   double pwr, pwrSum, pwrSqrSum, pwrMean, pwrVar, pwrAvgSqr, pwrAvg, noiseVar,
       CNo, accInt, *pos;
-  char *rawSignal, *rawSignalI, *rawSignalQ;
-  char trackingStatusUpdated[100], arg[20];
+  char *rawSignal;
   long int codePeriods;
   const double pi = 3.1415926535;
 
   FILE *fpdata, *fpdataLHCP;
-  clock_t time_1, time_2, time_3, time_4;
 
   // Initialization
   remCodePhase = 0;
@@ -69,8 +60,8 @@ int main() {
   pwrSqrSum = 0;
 
   // Get all the vectors/integers/strings from .bin files
-  int caCode[1025];
-  getcaCodeFromFileAsInt("../data/caCode.bin", caCode);
+  float caCode[1025];
+  getcaCodeFromFileAsFloat("../data/caCode.bin", caCode);
   blksize = getIntFromFile("../data/blksize.bin");
   codePhaseStep = getDoubleFromFile("../data/codePhaseStep.bin");
   remCodePhase = getDoubleFromFile("../data/remCodePhase.bin");
@@ -116,15 +107,9 @@ int main() {
   double VSMIndex[codePeriods / vsmInterval];
   double VSMValue[codePeriods / vsmInterval];
 
-  const int lutSize = 256;       // [N=number of bits]
-  int32_t sin_LUT_si32[lutSize]; // our sine wave LUT
-  int32_t cos_LUT_si32[lutSize]; // our sine wave LUT
-  const float delta_phi =
-      (float)carrFreqBasis / samplingFreq * blksize; // phase increment
-
-  int16_t sig_nco_si16[blksize]; // output buffer
-  int32_t sig_nco_si32[blksize]; // output buffer
-  float sig_nco_fl32[blksize];   // output buffer
+  const int lutSize = 256;     // [N=number of bits]
+  float sin_LUT_fl32[lutSize]; // our sine wave LUT
+  float cos_LUT_fl32[lutSize]; // our sine wave LUT
 
   // Allocate memory for the signal
   rawSignal = calloc(dataAdaptCoeff * blksize, sizeof(char));
@@ -135,9 +120,10 @@ int main() {
 
   // Sine Look-up Table Generation
   for (int i = 0; i < lutSize; ++i) {
-    sin_LUT_si32[i] = (int32_t)(10.0 * sinf(2.0f * pi * (float)i / lutSize));
-    cos_LUT_si32[i] = (int32_t)(10.0 * cosf(2.0f * pi * (float)i / lutSize));
+    sin_LUT_fl32[i] = (float)(10.0 * sinf(2.0f * pi * (float)i / lutSize));
+    cos_LUT_fl32[i] = (float)(10.0 * cosf(2.0f * pi * (float)i / lutSize));
   }
+
   printf("START\n");
   // START MAIN LOOP
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
@@ -183,68 +169,74 @@ int main() {
     double carrCos_vec[blksize];
     double carrSin_vec[blksize];
 
-    int32_t mixedcarrSin_vec[blksize];
-    int32_t mixedcarrCos_vec[blksize];
-    int32_t sin_nco_si32[blksize];
-    int32_t cos_nco_si32[blksize];
-    int32_t eCode_vec[blksize];
-    int32_t lCode_vec[blksize];
-    int32_t pCode_vec[blksize];
+    float mixedcarrSin_vec[blksize];
+    float mixedcarrCos_vec[blksize];
+    float mixedcarrSin_avx_vec[blksize];
+    float mixedcarrCos_avx_vec[blksize];
+    float sin_nco_si32[blksize];
+    float sin_avx_si32[blksize];
+    float cos_nco_si32[blksize];
+    float cos_avx_si32[blksize];
+    float eCode_vec[blksize];
+    float lCode_vec[blksize];
+    float pCode_vec[blksize];
+
+    float eCode_avx_vec[blksize];
+    float lCode_avx_vec[blksize];
+    float pCode_avx_vec[blksize];
+
+    //    printf("blksize \t: %d\n", blksize);
+    //    printf("remCarrPhase \t: %f\n", remCarrPhase);
+    //    printf("carrFreq \t: %f\n", carrFreq);
+    //    printf("samplingFreq \t: %f\n", samplingFreq);
 
     // Sine AVX2 NCO Look-up Table Implementation
-    avx512_nco_si32(sin_nco_si32, sin_LUT_si32, blksize, remCarrPhase, carrFreq,
-                    samplingFreq);
-    avx512_nco_si32(cos_nco_si32, cos_LUT_si32, blksize, remCarrPhase, carrFreq,
-                    samplingFreq);
+    avx512_nom_nco_fl32(sin_avx_si32, sin_LUT_fl32, blksize, remCarrPhase,
+                        carrFreq, samplingFreq);
 
-    avx512_code_si32(eCode_vec, pCode_vec, lCode_vec, caCode, blksize,
-                     (float)remCodePhase, (float)codeFreq, (float)samplingFreq);
+    avx512_nom_nco_fl32(cos_avx_si32, cos_LUT_fl32, blksize, remCarrPhase,
+                        carrFreq, samplingFreq);
+
+    avx512_nom_code_fl32(eCode_avx_vec, pCode_avx_vec, lCode_avx_vec, caCode,
+                         blksize, (float)remCodePhase, (float)codeFreq,
+                         (float)samplingFreq);
+
     // This loop is for parts of code I haven't brought out of loop or haven't
     // figured out how to
     for (i = 0; i < blksize; i++) {
-      // Find PRN Values:
-      // baseCode = (i * codePhaseStep + remCodePhase);
-      // pCode = (int32_t)(baseCode) < baseCode ? (baseCode + 1) : baseCode;
-      // eCode = (int32_t)(baseCode - earlyLateSpc) < (baseCode - earlyLateSpc)
-      //             ? (baseCode - earlyLateSpc + 1)
-      //             : (baseCode - earlyLateSpc);
-      // lCode = (int32_t)(baseCode + earlyLateSpc) < (baseCode + earlyLateSpc)
-      //             ? (baseCode + earlyLateSpc + 1)
-      //             : (baseCode + earlyLateSpc);
-      //
-      // pCode_vec[i] = *(caCode + pCode);
-      // eCode_vec[i] = *(caCode + eCode);
-      // lCode_vec[i] = *(caCode + lCode);
-
-      mixedcarrSin_vec[i] = sin_nco_si32[i] * rawSignal[i];
-      mixedcarrCos_vec[i] = cos_nco_si32[i] * rawSignal[i];
+      mixedcarrSin_vec[i] = sin_avx_si32[i] * rawSignal[i];
+      mixedcarrCos_vec[i] = cos_avx_si32[i] * rawSignal[i];
     }
 
     // // Mix to baseband
-    // avx2_si32_x2_mul_si32(mixedcarrSin_vec, sin_nco_si32, (int32_t
-    // *)rawSignal,
-    //                       blksize);
-    // avx2_si32_x2_mul_si32(mixedcarrCos_vec, cos_nco_si32, (int32_t
-    // *)rawSignal,
-    //                       blksize);
+    // avx2_si32_x2_mul_si32(mixedcarrSin_avx_vec, sin_nco_si32, rawSignalInt,
+    //                      blksize);
+    // avx2_si32_x2_mul_si32(mixedcarrCos_avx_vec, cos_nco_si32, rawSignal,
+    //                      blksize);
 
     // I_E
-    double I_E = avx512_mul_and_acc_si32(eCode_vec, mixedcarrSin_vec, blksize);
+    double I_E =
+        avx512_mul_and_acc_fl32(eCode_avx_vec, mixedcarrSin_vec, blksize);
 
     // I_L
-    double I_L = avx512_mul_and_acc_si32(lCode_vec, mixedcarrSin_vec, blksize);
+    double I_L =
+        avx512_mul_and_acc_fl32(lCode_avx_vec, mixedcarrSin_vec, blksize);
 
     // I_P
-    double I_P = avx512_mul_and_acc_si32(pCode_vec, mixedcarrSin_vec, blksize);
+    double I_P =
+        avx512_mul_and_acc_fl32(pCode_avx_vec, mixedcarrSin_vec, blksize);
 
     // Q_E
-    double Q_E = avx512_mul_and_acc_si32(eCode_vec, mixedcarrCos_vec, blksize);
+    double Q_E =
+        avx512_mul_and_acc_fl32(eCode_avx_vec, mixedcarrCos_vec, blksize);
 
     // Q_L
-    double Q_L = avx512_mul_and_acc_si32(lCode_vec, mixedcarrCos_vec, blksize);
+    double Q_L =
+        avx512_mul_and_acc_fl32(lCode_avx_vec, mixedcarrCos_vec, blksize);
 
     // Q_P
-    double Q_P = avx512_mul_and_acc_si32(pCode_vec, mixedcarrCos_vec, blksize);
+    double Q_P =
+        avx512_mul_and_acc_fl32(pCode_avx_vec, mixedcarrCos_vec, blksize);
 
     //--------------------------------------------------------------------------
 
@@ -332,31 +324,31 @@ int main() {
 
   // Write I_E_output to bin file
   FILE *fp = fopen(
-      "../plot/data_avx512_si32_add_mul_avx_lut_code/I_E_output.bin", "wb");
+      "../plot/data_avx512_fl32_add_mul_nom_lut_code/I_E_output.bin", "wb");
   fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
 
   // Write I_P_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/I_P_output.bin",
+  fp = fopen("../plot/data_avx512_fl32_add_mul_nom_lut_code/I_P_output.bin",
              "wb");
   fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
 
   // Write I_L_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/I_L_output.bin",
+  fp = fopen("../plot/data_avx512_fl32_add_mul_nom_lut_code/I_L_output.bin",
              "wb");
   fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
 
   // Write Q_E_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/Q_E_output.bin",
+  fp = fopen("../plot/data_avx512_fl32_add_mul_nom_lut_code/Q_E_output.bin",
              "wb");
   fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
 
   // Write Q_P_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/Q_P_output.bin",
+  fp = fopen("../plot/data_avx512_fl32_add_mul_nom_lut_code/Q_P_output.bin",
              "wb");
   fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
 
   // Write Q_L_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/Q_L_output.bin",
+  fp = fopen("../plot/data_avx512_fl32_add_mul_nom_lut_code/Q_L_output.bin",
              "wb");
   fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
 
