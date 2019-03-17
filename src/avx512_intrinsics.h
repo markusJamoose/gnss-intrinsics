@@ -1,35 +1,12 @@
 /*!
  *  \file avx512_intrinsics.h
- *  \brief      Provides c functions that implement Intel's AVX512 intrinsic
- * functions \details    Based off Volk kernel functions. Specifically the AVX
- * functions defined in: volk_32f_x2_multiply_32f.h volk_32f_accumulator_s32f.h
- * The files can be found at:
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_x2_multiply_32f.h
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_accumulator_s32f.h
+ *  \brief      Provides C functions that implement Intel's AVX512 intrinsic
+ *  \details    Code style and functionality based in the VOLK project.
+ *  \author    Damian Miralles
  *  \author    Jake Johnson
  *  \version   4.1a
  *  \date      Jan 23, 2018
  *  \pre       Make sure you have .bin files containing data and lookup tables
- *  \bug       None reported
- *  \warning   None so far
- *  \copyright TBD
- */
-
-/*
- * This file provides c functions that implement Intel's AVX512 intrinsic
- * functions
- *
- * Author: Jake
- * Date Created: Jan 23, 2018
- * Last Modified:  Jan 29, 2018
- *
- * Based off Volk kernel functions. Specifically the AVX functions defined in:
- *   volk_32f_x2_multiply_32f.h
- *   volk_32f_accumulator_s32f.h
- * The files can be found at:
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_x2_multiply_32f.h
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_accumulator_s32f.h
- *
  */
 
 #include "immintrin.h"
@@ -287,8 +264,7 @@ void avx512_code_si32(int *ecode, int *pcode, int *lcode, const int *cacode,
  * an fl32 type
  * \param[in] avector First vector to multiply
  * \param[in] bvector Second vector to multiply
- * \param[in] num_points Number of points in each
- * vector
+ * \param[in] num_points Number of points in each vector
  */
 static inline double avx512_mul_and_acc_si32(const int *aVector,
                                              const int *bVector,
@@ -648,8 +624,7 @@ void avx512_code_fl32(float *ecode, float *pcode, float *lcode,
  * an fl32 type
  * \param[in] avector First vector to multiply
  * \param[in] bvector Second vector to multiply
- * \param[in] num_points Number of points in each
- * vector
+ * \param[in] num_points Number of points in each vector
  */
 static inline float avx512_mul_and_acc_fl32(const float *aVector,
                                             const float *bVector,

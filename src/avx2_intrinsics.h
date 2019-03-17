@@ -1,35 +1,12 @@
 /*!
  *  \file avx2_intrinsics.h
- *  \brief      Provides c functions that implement Intel's AVX2 intrinsic
- * functions \details    Based off Volk kernel functions. Specifically the AVX
- * functions defined in: volk_32f_x2_multiply_32f.h volk_32f_accumulator_s32f.h
- * The files can be found at:
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_x2_multiply_32f.h
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_accumulator_s32f.h
+ *  \brief      Provides C functions that implement Intel's AVX512 intrinsic
+ *  \details    Code style and functionality based in the VOLK project.
+ *  \author    Damian Miralles
  *  \author    Jake Johnson
  *  \version   4.1a
  *  \date      Jan 23, 2018
  *  \pre       Make sure you have .bin files containing data and lookup tables
- *  \bug       None reported
- *  \warning   None so far
- *  \copyright TBD
- */
-
-/*
- * This file provides c functions that implement Intel's AVX2 intrinsic
- * functions
- *
- * Author: Jake
- * Date Created: Jan 23, 2018
- * Last Modified:  Jan 29, 2018
- *
- * Based off Volk kernel functions. Specifically the AVX functions defined in:
- *   volk_32f_x2_multiply_32f.h
- *   volk_32f_accumulator_s32f.h
- * The files can be found at:
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_x2_multiply_32f.h
- *   https://github.com/gnuradio/volk/blob/master/kernels/volk/volk_32f_accumulator_s32f.h
- *
  */
 
 #include "immintrin.h"
@@ -518,6 +495,13 @@ void avx2_code_fl32(float *ecode, float *pcode, float *lcode,
   }
 }
 
+/*!
+ *  \brief Multiply and accumulates product of two vectors storing the result in
+ * a fl32 type
+ * \param[in] avector First vector to multiply
+ * \param[in] bvector Second vector to multiply
+ * \param[in] num_points Number of points in each vector
+ */
 static inline float avx2_mul_and_acc_fl32(const float *aVector,
                                           const float *bVector,
                                           unsigned int num_points) {
@@ -571,6 +555,14 @@ static inline float avx2_mul_and_acc_fl32(const float *aVector,
   return returnValue;
 }
 
+/*!
+ *  \brief Multiply point to point two vectors together as a fl32 type
+ * \param[out] cvector Product of point to point multiplication
+ * \param[in] avector First vector to multiply
+ * \param[in] bvector Second vector to multiply
+ * \param[in] num_points Number of points in each
+ * vector
+ */
 static inline void avx2_fl32_x2_mul_fl32(float *cVector, const float *aVector,
                                          const float *bVector,
                                          unsigned int num_points) {
@@ -607,6 +599,13 @@ static inline void avx2_fl32_x2_mul_fl32(float *cVector, const float *aVector,
   }
 }
 
+/*!
+ *  \brief Multiply and accumulates product of two vectors storing the result in
+ * a si32 type
+ * \param[in] avector First vector to multiply
+ * \param[in] bvector Second vector to multiply
+ * \param[in] num_points Number of points in each vector
+ */
 static inline double avx2_mul_and_acc_si32(const int *aVector,
                                            const int *bVector,
                                            unsigned int num_points) {
@@ -660,6 +659,14 @@ static inline double avx2_mul_and_acc_si32(const int *aVector,
   return returnValue;
 }
 
+/*!
+ *  \brief Multiply point to point two vectors together as a si32 type
+ * \param[out] cvector Product of point to point multiplication
+ * \param[in] avector First vector to multiply
+ * \param[in] bvector Second vector to multiply
+ * \param[in] num_points Number of points in each
+ * vector
+ */
 static inline void avx2_si32_x2_mul_si32(int *cVector, const int *aVector,
                                          const int *bVector,
                                          unsigned int num_points) {
@@ -701,6 +708,11 @@ static inline void avx2_si32_x2_mul_si32(int *cVector, const int *aVector,
   }
 }
 
+/*!
+ *  \brief Multiply the elements of a vector
+ * \param[in] inputBuffer Elements stored in dedicated vector
+ * \param[in] num_points Number of points in each vector
+ */
 static inline void avx2_mul_short(short *cVector, const short *aVector,
                                   const short *bVector,
                                   unsigned int num_points) {
@@ -743,7 +755,11 @@ static inline void avx2_mul_short(short *cVector, const short *aVector,
   }
 }
 
-// Accumulate the elements of a vector and return result as a double
+/*!
+ *  \brief Accumulate the elements of a vector
+ * \param[in] inputBuffer Elements stored in dedicated vector
+ * \param[in] num_points Number of points in each vector
+ */
 static inline double avx_accumulate_short(const short *inputBuffer,
                                           unsigned int num_points) {
   int returnValue = 0;
@@ -788,7 +804,13 @@ static inline double avx_accumulate_short(const short *inputBuffer,
   return returnValue;
 }
 
-// Accumulate the elements of a vector
+/*!
+ * \brief Accumulate the elements of a vector using unsaturated math
+ * \details Using the unsaturated math, once the maximum value in the data type
+ * is reached, the value will rollover and start from its minimum value.
+ * \param[in] inputBuffer Elements stored in dedicated vector
+ * \param[in] num_points Number of points in each vector
+ */
 static inline double avx_accumulate_short_unsat(const short *inputBuffer,
                                                 unsigned int num_points) {
   int returnValue = 0;
@@ -833,10 +855,13 @@ static inline double avx_accumulate_short_unsat(const short *inputBuffer,
   return returnValue;
 }
 
-// Multiply and accumulate two vectors of short integers.  Return result in a
-// double
-// TODO: This maxes out at 524272 for some reason??? (i.e. won't return a value
-// greater than 524272) Update: Probably because tempBuffer[] is a short array
+/*!
+ *  \brief Multiply and accumulates product of two vectors storing the result in
+ * a short type
+ * \param[in] avector First vector to multiply
+ * \param[in] bvector Second vector to multiply
+ * \param[in] num_points Number of points in each vector
+ */
 static inline double avx2_mul_and_acc_short(const short *aVector,
                                             const short *bVector,
                                             unsigned int num_points) {
@@ -898,8 +923,14 @@ static inline double avx2_mul_and_acc_short(const short *aVector,
   return returnValue;
 }
 
-// Multiply two short vectors [16_bit multiplication]
-// Store results as ints to perform 32 bit addition
+/*!
+ *  \brief Multiply point to point two vectors together as a si32 type
+ * \param[out] cvector Product of point to point multiplication
+ * \param[in] avector First vector to multiply
+ * \param[in] bvector Second vector to multiply
+ * \param[in] num_points Number of points in each
+ * vector
+ */
 static inline void avx2_mul_short_store_int(short *cVector,
                                             const short *aVector,
                                             const short *bVector,
@@ -943,7 +974,11 @@ static inline void avx2_mul_short_store_int(short *cVector,
   }
 }
 
-// Accumulate the elements of a vector [32 bit addition]
+/*!
+ *  \brief Accumulate the elements of a vector
+ * \param[in] inputBuffer Elements stored in dedicated vector
+ * \param[in] num_points Number of points in each vector
+ */
 static inline double avx_accumulate_int(const int *inputBuffer,
                                         unsigned int num_points) {
   int returnValue = 0;

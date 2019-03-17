@@ -12,7 +12,7 @@
  *
  */
 
-#include "avx512_intrinsics.h"
+#include "avx2_intrinsics.h"
 #include "read_bin.h" // For getting values from bin files
 #include <math.h>
 #include <stdio.h>
@@ -138,7 +138,7 @@ int main() {
     sin_LUT_si32[i] = (int32_t)(10.0 * sinf(2.0f * pi * (float)i / lutSize));
     cos_LUT_si32[i] = (int32_t)(10.0 * cosf(2.0f * pi * (float)i / lutSize));
   }
-  printf("START\n");
+
   // START MAIN LOOP
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
 
@@ -192,13 +192,14 @@ int main() {
     int32_t pCode_vec[blksize];
 
     // Sine AVX2 NCO Look-up Table Implementation
-    avx512_nco_si32(sin_nco_si32, sin_LUT_si32, blksize, remCarrPhase, carrFreq,
-                    samplingFreq);
-    avx512_nco_si32(cos_nco_si32, cos_LUT_si32, blksize, remCarrPhase, carrFreq,
-                    samplingFreq);
+    avx2_nom_nco_si32(sin_nco_si32, sin_LUT_si32, blksize, remCarrPhase,
+                      carrFreq, samplingFreq);
+    avx2_nom_nco_si32(cos_nco_si32, cos_LUT_si32, blksize, remCarrPhase,
+                      carrFreq, samplingFreq);
 
-    avx512_code_si32(eCode_vec, pCode_vec, lCode_vec, caCode, blksize,
-                     (float)remCodePhase, (float)codeFreq, (float)samplingFreq);
+    avx2_nom_code_si32(eCode_vec, pCode_vec, lCode_vec, caCode, blksize,
+                       (float)remCodePhase, (float)codeFreq,
+                       (float)samplingFreq);
     // This loop is for parts of code I haven't brought out of loop or haven't
     // figured out how to
     for (i = 0; i < blksize; i++) {
@@ -229,22 +230,22 @@ int main() {
     //                       blksize);
 
     // I_E
-    double I_E = avx512_mul_and_acc_si32(eCode_vec, mixedcarrSin_vec, blksize);
+    double I_E = avx2_mul_and_acc_si32(eCode_vec, mixedcarrSin_vec, blksize);
 
     // I_L
-    double I_L = avx512_mul_and_acc_si32(lCode_vec, mixedcarrSin_vec, blksize);
+    double I_L = avx2_mul_and_acc_si32(lCode_vec, mixedcarrSin_vec, blksize);
 
     // I_P
-    double I_P = avx512_mul_and_acc_si32(pCode_vec, mixedcarrSin_vec, blksize);
+    double I_P = avx2_mul_and_acc_si32(pCode_vec, mixedcarrSin_vec, blksize);
 
     // Q_E
-    double Q_E = avx512_mul_and_acc_si32(eCode_vec, mixedcarrCos_vec, blksize);
+    double Q_E = avx2_mul_and_acc_si32(eCode_vec, mixedcarrCos_vec, blksize);
 
     // Q_L
-    double Q_L = avx512_mul_and_acc_si32(lCode_vec, mixedcarrCos_vec, blksize);
+    double Q_L = avx2_mul_and_acc_si32(lCode_vec, mixedcarrCos_vec, blksize);
 
     // Q_P
-    double Q_P = avx512_mul_and_acc_si32(pCode_vec, mixedcarrCos_vec, blksize);
+    double Q_P = avx2_mul_and_acc_si32(pCode_vec, mixedcarrCos_vec, blksize);
 
     //--------------------------------------------------------------------------
 
@@ -331,38 +332,32 @@ int main() {
   // Write early, late, prompt values to bin files:-----------------------------
 
   // Write I_E_output to bin file
-  FILE *fp = fopen(
-      "../plot/data_avx512_si32_add_mul_avx_lut_code/I_E_output.bin", "wb");
+  FILE *fp =
+      fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/I_E_output.bin", "wb");
   fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
 
   // Write I_P_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/I_P_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/I_P_output.bin", "wb");
   fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
 
   // Write I_L_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/I_L_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/I_L_output.bin", "wb");
   fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
 
   // Write Q_E_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/Q_E_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_E_output.bin", "wb");
   fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
 
   // Write Q_P_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/Q_P_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_P_output.bin", "wb");
   fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
 
   // Write Q_L_output to bin file
-  fp = fopen("../plot/data_avx512_si32_add_mul_avx_lut_code/Q_L_output.bin",
-             "wb");
+  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_L_output.bin", "wb");
   fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
 
   //----------------------------------------------------------------------------
 
-  printf("END\n");
   return 0;
 }
 
