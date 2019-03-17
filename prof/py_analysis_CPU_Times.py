@@ -1,5 +1,4 @@
 #!/bin/python
-
 #
 # This scripts runs a vtune amplifier program x amount of times and finds the
 # mean, std, max, and min of the CPU Times found
@@ -57,11 +56,3 @@ for j in range(0,9):
     f.write("\n\n")
 
 f.close()
-# Code derived from:
-
-# https://stackoverflow.com/questions/4172448/is-it-possible-to-break-a-long-line-to-multiple-lines-in-python
-# https://stackoverflow.com/questions/10358547/grep-for-contents-after-pattern
-# https://stackoverflow.com/questions/89228/calling-an-external-command-in-python
-# https://stackoverflow.com/questions/11566967/python-raise-child-exception-oserror-errno-2-no-such-file-or-directory
-# https://stackoverflow.com/questions/8659275/how-to-store-the-result-of-an-executed-shell-command-in-a-variable-in-python
-# https://docs.python.org/3/library/subprocess.html#replacing-shell-pipeline

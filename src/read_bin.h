@@ -138,27 +138,3 @@ void getDataFromFile(char file_name[1000], double *output_array, int size) {
   }
   fclose(fp);
 }
-/*
-double getFromFile(char file_name[1000], double * output_array, int size)
-{
-    enum { SIZE = 16368 };
-    double b[SIZE];
-    FILE *fp = fopen(file_name,"rb");
-    size_t ret_code = fread(b, sizeof *b, SIZE, fp); // reads an array of
-doubles if(ret_code == SIZE) {
-        //puts("Array read successfully, contents: ");
-        for(int n = 0; n < SIZE; ++n){
-          output_array[n] = b[n];
-          //printf("%f ", b[n]); // Printed value is truncated
-          //putchar('\n');
-      }
-    } else { // error handling
-       if (feof(fp))
-          printf("Error reading test.bin: unexpected end of file\n");
-       else if (ferror(fp)) {
-           perror("Error reading test.bin");
-       }
-    }
-    fclose(fp);
-}
-*/

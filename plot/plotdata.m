@@ -63,6 +63,7 @@ timeAxisInSeconds = (1:length(data_I_P))/1000;
 %create a figure and plot the raw data values (this should
 %provide some idea about the range necessary to save the data)
 figure(1)
+set(gca,'FontSize',10)
 suptitle({['Version: ', conf.sw_version,', Flags: ',conf.comp_flags,...
        ', CPU Time: ',conf.cpu_time,', Data Processed: ',conf.data_proc],''});
 subplot(2,3,1),plot(timeAxisInSeconds, data_I_E)
@@ -89,6 +90,7 @@ grid on;
 % (try zooming on on the top plot to see actual data bits if
 % interested - dma will be happy to explain these values if interested)
 figure(2)
+set(gca,'FontSize',10)
 suptitle({['Version: ', conf.sw_version,', Flags: ',conf.comp_flags,...
        ', CPU Time: ',conf.cpu_time,', Data Processed: ',conf.data_proc],''});
 subplot(211);
