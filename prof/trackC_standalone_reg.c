@@ -1,18 +1,25 @@
 /*!
- * \file trackC_standalone_reg.c
- *  \brief     C version of trackC.c in Dr. Akos's MATLAB GNSS SDR simulation
- *  \details   This file is used to test the Intel intrinsic for the GNSS
- * tracking operations and came up with code that will optimize performance.
+ *  \file trackC_standalone_reg.c
+ *  \brief      Simulates the tracking stage of a receiver using nominal C code
+ *  \details    Profiles code when using:
+ 1. Carrier wave generation by means of DLUT method.
+ 2. Pseudorandom code generation by means of DLUT method.
+ 3. Down-conversion of the received signal by nominal multiplication.
+ 4. Multiplication of baseband signal with a local replica of
+ranging code using with nominal C operations
+ 5. Accumulation to generate the correlation value with nominal C operations
+ *  \author    Damian Miralles
  *  \author    Jake Johnson
- *  \version   4.1a
- *  \date      Jan 15, 2018
- *  \pre       Make sure you have .bin files containing data and lookup tables
- *  \bug       None reported
- *  \warning   None so far
- *  \copyright TBD
+ *  \date      Jan 23, 2018
+ *  \pre       Make sure you have .bin files containing data and lookup tables.
+ *  \code{.sh}
+# Sample compilation script
+$ gcc -I ../src/ trackC_standalone_reg.c -g
+ -mavx2 -lm -o reg_standalone -O3
+ *  \endcode
  */
 
-#include "read_bin.h" // For getting values from bin files
+#include "read_bin.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +34,6 @@
 int main() {
 
   // Declarations
-
   int i, loopcount, angle, blksize, pCode, eCode, lCode, channelNr,
       totalChannels;
   int vsmCount, vsmInterval, PRN, dataAdaptCoeff;
@@ -87,10 +93,8 @@ int main() {
   tau1code = getDoubleFromFile("../data/tau1code.bin");
   tau2code = getDoubleFromFile("../data/tau2code.bin");
   PDIcode = getDoubleFromFile("../data/PDIcode.bin");
-  codeFreq =
-      1023002.79220779; // getDoubleFromFile("text_data_files/codeFreq.bin");
-  codeFreqBasis =
-      1023002.79220779; // getDoubleFromFile("text_data_files/codeFreqBasis.bin");
+  codeFreq = 1023002.79220779;
+  codeFreqBasis = 1023002.79220779;
   codeLength = getDoubleFromFile("../data/codeLength.bin");
   codePeriods = (long int)getIntFromFile("../data/codePeriods.bin");
   // I removed the new line and added \n... this might cause issues
@@ -116,25 +120,6 @@ int main() {
   double Q_L_output[codePeriods];
   double VSMIndex[codePeriods / vsmInterval];
   double VSMValue[codePeriods / vsmInterval];
-
-  // DON'T DELETE
-  // get number of elements in array
-  // int elem_in_array = (sizeof( myarray ) / sizeof( myarray[0] ));
-  // printf("Number of elements in array: %d \n", elem_in_array);
-
-  /*mexCallMATLAB(1,&hwb,2, pr, "waitbar");
-
-  //Adjust the waitbar size for  CNo display
-
-          pr[0]	=	hwb;
-          sprintf(arg,"Position");
-          pr[1]	=	mxCreateString(arg);
-          mexCallMATLAB(1,&waitbarPos,2,pr,"get");
-          pos 	= 	mxGetPr(waitbarPos);
-          *(pos+3)=	90;
-          pr[2]	=	waitbarPos;
-          mexCallMATLAB(0,NULL,3,pr,"set");
-  */
 
   // Allocate memory for the signal
   rawSignal = calloc(dataAdaptCoeff * blksize, sizeof(char));
@@ -283,33 +268,6 @@ int main() {
     Q_E_output[loopcount] = Q_E;                       // Q_E
     Q_P_output[loopcount] = Q_P;                       // Q_P
     Q_L_output[loopcount] = Q_L;                       // Q_L
-
-    /*
-    *(lhs1+loopcount)	=	carrFreq;
-    *(lhs2+loopcount)	=	codeFreq;
-    *(lhs3+loopcount)	=	absoluteSample;
-    *(lhs4+loopcount)	=	codeError;
-    *(lhs5+loopcount)	=	codeNco;
-    *(lhs6+loopcount)	=	carrError;
-    *(lhs7+loopcount)	=	carrNco;
-    *(lhs8+loopcount)	=	I_E;
-    *(lhs9+loopcount)	=	I_P;
-    *(lhs10+loopcount)	=	I_L;
-    *(lhs11+loopcount)	=	Q_E;
-    *(lhs12+loopcount)	=	Q_P;
-    *(lhs13+loopcount)	=	Q_L;
-
-    if ((loopcount%100)==0)
-    {
-
-                    sprintf(trackingStatusUpdated,"%s\n Completed: %d of
-    %d\nC/No: %4.1f (dB-Hz)",trackingStatus,loopcount,codePeriods,CNo); pr[0] =
-    mxCreateDoubleScalar((double)loopcount/codePeriods); pr[1] = hwb; pr[2] =
-    mxCreateString(trackingStatusUpdated); mexCallMATLAB(0,NULL,3, pr,
-    "waitbar");
-
-    }
-    */
   }
   // mexCallMATLAB(0,NULL,1, &hwb, "close");
 
@@ -341,5 +299,3 @@ int main() {
 
   return 0;
 }
-
-// compile: gcc trackC_standalone_reg.c -lm

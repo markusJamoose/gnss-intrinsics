@@ -12,3 +12,14 @@ tracking operations.
   [https://drive.google.com/file/d/1zrM0wjSQgH8hpJgw6_xE-E2yr8mNTEkn/view?usp=sharing]
   or
   [https://drive.google.com/open?id=1Jz07sTIdCOC557pjuQ5ODp1BuQ8h0-O8]
+
+## Directories
+build: Build files and dependencies in this directory
+data: sample data used
+plot:
+prof:
+src:
+
+## Build code
+
+## Profile code

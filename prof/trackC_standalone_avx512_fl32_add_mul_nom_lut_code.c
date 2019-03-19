@@ -1,12 +1,27 @@
 /*!
- * \file trackC_standalone_avx512_fl32_add_mul_lut_code.h
- * \brief  Test avx512 functionalities for code profiling
- * \author Damian Miralles, 2018. damian.miralles@colorado.edu
- *
+ *  \file trackC_standalone_avx2_fl32_add_mul_nom_lut_code.c
+ *  \brief      Simulates the tracking stage of a receiver using AVX512
+ intrinsics.
+ *  \details    Profiles code when using:
+ 1. Carrier wave generation by means of PLUT method.
+ 2. Pseudorandom code generation by means of PLUT method.
+ 3. Down-conversion of the received signal by nominal multiplication.
+ 4. Multiplication and accumulationof baseband signal with a local replica of
+ranging code using AVX512 SIMD intrinsics with fl32 types
+ *  \author    Damian Miralles
+ *  \author    Jake Johnson
+ *  \date      Jan 23, 2018
+ *  \pre       Make sure you have .bin files containing data and lookup tables.
+ *  \note      Functions in the file must target AVX512 enabled platforms.
+ *  \code{.sh}
+# Sample compilation script
+$ gcc -I ../src/ trackC_standalone_avx2_fl32_add_mul_nom_lut_code.c -g
+ -mavx2 -lm -o avx512_fl32_nom_lut_code -O3
+ *  \endcode
  */
 
 #include "avx512_intrinsics.h"
-#include "read_bin.h" // For getting values from bin files
+#include "read_bin.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,25 +154,13 @@ int main() {
     codePhaseStep = codeFreq / samplingFreq;
     blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
 
-    ///////////////////////// NEW CODE
-    //////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     // Create blksize_arr
     double blksize_arr[blksize];
     for (i = 0; i < blksize; i++) {
       blksize_arr[i] = i;
     }
 
-    ///////////////////////// END NEW CODE
-    /////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
-
     i = fread(rawSignal, sizeof(char), dataAdaptCoeff * blksize, fpdata);
-
-    ///////////////////////// NEW CODE
-    //////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // An error check should be added here to see if the required amount of data
     // can be read
@@ -185,11 +188,6 @@ int main() {
     float lCode_avx_vec[blksize];
     float pCode_avx_vec[blksize];
 
-    //    printf("blksize \t: %d\n", blksize);
-    //    printf("remCarrPhase \t: %f\n", remCarrPhase);
-    //    printf("carrFreq \t: %f\n", carrFreq);
-    //    printf("samplingFreq \t: %f\n", samplingFreq);
-
     // Sine AVX2 NCO Look-up Table Implementation
     avx512_nom_nco_fl32(sin_avx_si32, sin_LUT_fl32, blksize, remCarrPhase,
                         carrFreq, samplingFreq);
@@ -207,12 +205,6 @@ int main() {
       mixedcarrSin_vec[i] = sin_avx_si32[i] * rawSignal[i];
       mixedcarrCos_vec[i] = cos_avx_si32[i] * rawSignal[i];
     }
-
-    // // Mix to baseband
-    // avx2_si32_x2_mul_si32(mixedcarrSin_avx_vec, sin_nco_si32, rawSignalInt,
-    //                      blksize);
-    // avx2_si32_x2_mul_si32(mixedcarrCos_avx_vec, cos_nco_si32, rawSignal,
-    //                      blksize);
 
     // I_E
     double I_E =
@@ -237,12 +229,6 @@ int main() {
     // Q_P
     double Q_P =
         avx512_mul_and_acc_fl32(pCode_avx_vec, mixedcarrCos_vec, blksize);
-
-    //--------------------------------------------------------------------------
-
-    ///////////////////////////////////// END NEW CODE
-    ///////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////
 
     // Compute the VSM C/No
     pwr = I_P * I_P + Q_P * Q_P;
@@ -357,5 +343,3 @@ int main() {
   printf("END\n");
   return 0;
 }
-
-// compile: gcc -g -mavx -march=haswell trackC_standalone_AVX2.c -lm

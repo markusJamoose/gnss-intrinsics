@@ -1,15 +1,23 @@
-/*
- * This file is a version of trackC.c in Dr. Akos's matlab GNSS SDR simulation
- that
- * runs without MATLAB.  This version also uses AVX2 intrinsic functions with
- * 32-bit integers for addition 16-bit for multiplication
- * TODO: THIS CURRENTLY DOES NOT WORK
-
- *
- * Author: Jake Johnson
- * Date created: Jan 28, 2018
- * Last Modified: Jan 29, 2018
- *
+/*!
+ *  \file trackC_standalone_avx2_32i_add_mul_nom_lut.c
+ *  \brief      Simulates the tracking stage of a receiver using AVX2
+ intrinsics.
+ *  \details    Profiles code when using:
+ 1. Carrier wave generation by means of PLUT method.
+ 2. Pseudorandom code generation by means of PLUT method.
+ 3. Down-conversion of the received signal by nominal multiplication.
+ 4. Multiplication and accumulationof baseband signal with a local replica of
+ranging code using AVX2 SIMD intrinsics with si32 types
+ *  \author    Damian Miralles
+ *  \author    Jake Johnson
+ *  \date      Jan 23, 2018
+ *  \pre       Make sure you have .bin files containing data and lookup tables.
+ *  \note      Functions in the file must target AVX2 enabled platforms.
+ *  \code{.sh}
+# Sample compilation script
+$ gcc -I ../src/ trackC_standalone_avx2_32i_add_mul_nom_lut.c -g
+ -mavx2 -lm -o avx2_si32_nom_lut -O3
+ *  \endcode
  */
 
 #include "avx2_intrinsics.h"
