@@ -1,5 +1,5 @@
 /*!
- *  \file trackC_standalone_avx2_fl32_add_mul_avx_nom_code.c
+ *  \file trackC_standalone_avx2_fl32_add_mul_nom_lut_code.c
  *  \brief      Simulates the tracking stage of a receiver using AVX2
  intrinsics.
  *  \details    Profiles code when using:
