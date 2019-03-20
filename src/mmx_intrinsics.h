@@ -19,7 +19,6 @@
  *  \param[in] bVector Source vector with factors to multiply
  *  \param[in] num_points Number of points to Multiply in the operation
  */
-
 static inline double mmx_mul_and_acc_short(const short *aVector,
                                            const short *bVector,
                                            unsigned int num_points) {

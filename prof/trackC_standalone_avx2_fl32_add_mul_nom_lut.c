@@ -1,19 +1,27 @@
-/*
- * This file is a version of trackC.c in Dr. Akos's matlab GNSS SDR simulation
- that
- * runs without MATLAB.  This version also uses AVX2 intrinsic functions with
- * 32-bit integers for addition 16-bit for multiplication
- * TODO: THIS CURRENTLY DOES NOT WORK
-
- *
- * Author: Jake Johnson
- * Date created: Jan 28, 2018
- * Last Modified: Jan 29, 2018
- *
+/*!
+ *  \file trackC_standalone_avx2_fl32_add_mul_nom_lut.c
+ *  \brief      Simulates the tracking stage of a receiver using AVX2
+ intrinsics.
+ *  \details    Profiles code when using:
+ 1. Carrier wave generation by means of PLUT method.
+ 2. Pseudorandom code generation by means of PLUT method.
+ 3. Down-conversion of the received signal by nominal multiplication.
+ 4. Multiplication and accumulationof baseband signal with a local replica of
+ranging code using AVX2 SIMD intrinsics with fl32 types
+ *  \author    Damian Miralles
+ *  \author    Jake Johnson
+ *  \date      Jan 23, 2018
+ *  \pre       Make sure you have .bin files containing data and lookup tables.
+ *  \note      Functions in the file must target AVX2 enabled platforms.
+ *  \code{.sh}
+# Sample compilation script
+$ gcc -I ../src/ trackC_standalone_avx2_fl32_add_mul_nom_lut.c -g
+ -mavx2 -lm -o avx2_fl32_nom_lut -O3
+ *  \endcode
  */
 
 #include "avx2_intrinsics.h"
-#include "read_bin.h" // For getting values from bin files
+#include "read_bin.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -155,25 +163,13 @@ int main() {
     codePhaseStep = codeFreq / samplingFreq;
     blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
 
-    ///////////////////////// NEW CODE
-    //////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     // Create blksize_arr
     double blksize_arr[blksize];
     for (i = 0; i < blksize; i++) {
       blksize_arr[i] = i;
     }
 
-    ///////////////////////// END NEW CODE
-    /////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
-
     i = fread(rawSignal, sizeof(char), dataAdaptCoeff * blksize, fpdata);
-
-    ///////////////////////// NEW CODE
-    //////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // An error check should be added here to see if the required amount of data
     // can be read
@@ -220,12 +216,6 @@ int main() {
       mixedcarrCos_vec[i] = carrCos_vec[i] * rawSignal[i];
     }
 
-    // Sine AVX2 NCO Look-up Table Implementation
-    // avx2_nom_nco_fl32(sin_nco_fl32, sin_LUT_fl32, blksize, remCarrPhase,
-    //                  carrFreq, samplingFreq);
-    // avx2_nom_nco_fl32(cos_nco_fl32, cos_LUT_fl32, blksize, remCarrPhase,
-    //                  carrFreq, samplingFreq);
-
     // Mix to baseband
     avx2_fl32_x2_mul_fl32(mixedcarrSin_vec, carrSin_vec, (float *)rawSignal,
                           blksize);
@@ -249,12 +239,6 @@ int main() {
 
     // Q_P
     double Q_P = avx2_mul_and_acc_fl32(pCode_vec, mixedcarrCos_vec, blksize);
-
-    //--------------------------------------------------------------------------
-
-    ///////////////////////////////////// END NEW CODE
-    ///////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////
 
     // Compute the VSM C/No
     pwr = I_P * I_P + Q_P * Q_P;
@@ -363,5 +347,3 @@ int main() {
 
   return 0;
 }
-
-// compile: gcc -g -mavx -march=haswell trackC_standalone_AVX2.c -lm

@@ -1,12 +1,10 @@
-/*
- * This file provides functions for reading in vectors of data from bin files to
- * C
- *
- * Author: Jake Johnson
- * Date created: Jan 23, 2018
- * Last Modified: Jan 29, 2018
- *
- * Based off: http://en.cppreference.com/w/c/io/fread
+/*!
+ *  \file read_bin.h
+ *  \brief      Utility functions for reading data from data files
+ *  \author    Damian Miralles
+ *  \author    Jake Johnson
+ *  \version   4.1a
+ *  \date      Jan 23, 2018
  */
 
 #include <stdio.h>
