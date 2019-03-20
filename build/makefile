@@ -61,4 +61,12 @@ doc:
 	doxygen $(DOC_DIR)gnss-intrinsics-doxyfile
 
 clean:
-	rm -f $(BIN_DIR)
+	rm -f $(BIN_DIR)reg_standalone
+	rm -f $(BIN_DIR)nom_si32_avx2
+	rm -f $(BIN_DIR)avx_si32_avx2
+	rm -f $(BIN_DIR)nom_fl32_avx2
+	rm -f $(BIN_DIR)avx_fl32_avx2
+	rm -f $(BIN_DIR)nom_si32_avx512
+	rm -f $(BIN_DIR)avx_si32_avx512
+	rm -f $(BIN_DIR)nom_fl32_avx512
+	rm -f $(BIN_DIR)avx_fl32_avx512
