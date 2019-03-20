@@ -1,5 +1,5 @@
 /*!
- *  \file trackC_standalone_avx2_fl32_add_mul_nom_lut_code.c
+ *  \file trackC_standalone_avx512_si32_add_mul_nom_lut_code.c
  *  \brief      Simulates the tracking stage of a receiver using AVX512
  intrinsics.
  *  \details    Profiles code when using:
@@ -15,7 +15,7 @@ ranging code using AVX512 SIMD intrinsics with fl32 types
  *  \note      Functions in the file must target AVX512 enabled platforms.
  *  \code{.sh}
 # Sample compilation script
-$ gcc -I ../src/ trackC_standalone_avx2_fl32_add_mul_nom_lut_code.c -g
+$ gcc -I ../src/ trackC_standalone_avx512_si32_add_mul_nom_lut_code.c -g
  -mavx2 -lm -o avx512_fl32_nom_lut_code -O3
  *  \endcode
  */
