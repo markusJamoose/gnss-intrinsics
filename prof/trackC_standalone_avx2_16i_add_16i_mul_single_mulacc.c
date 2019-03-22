@@ -22,7 +22,9 @@ $ gcc -I ../src/ trackC_standalone_avx2_16i_add_16i_mul_single_mulacc.c -g
 
 #include "avx2_intrinsics.h"
 #include "read_bin.h"
+#include "write_bin.h"
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -296,37 +298,46 @@ int main() {
 
   fclose(fpdata);
 
-  // Write early, late, prompt values to bin files:-----------------------------
-
-  // Write I_E_output to bin file
-  FILE *fp = fopen(
-      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_E_output.bin", "wb");
-  fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
-
-  // Write I_P_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_P_output.bin",
-             "wb");
-  fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
-
-  // Write I_L_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_L_output.bin",
-             "wb");
-  fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
-
-  // Write Q_E_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_E_output.bin",
-             "wb");
-  fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
-
-  // Write Q_P_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_P_output.bin",
-             "wb");
-  fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
-
-  // Write Q_L_output to bin file
-  fp = fopen("../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_L_output.bin",
-             "wb");
-  fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
+  // Clearing unused variables for logging operations
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/codeNco_output.bin",
+      codeNco_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/codeError_output.bin",
+      codeError_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/carrNco_output.bin",
+      carrNco_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/carrError_output.bin",
+      carrError_output);
+  write_file_fl64("../plot/data_avx2_16i_add_16i_mul_single_mulacc/"
+                  "absoluteSample_output.bin",
+                  absoluteSample_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/carrFreq_output.bin",
+      carrFreq_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/codeFreq_output.bin",
+      codeFreq_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_E_output.bin",
+      I_E_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_P_output.bin",
+      I_P_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/I_L_output.bin",
+      I_L_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_E_output.bin",
+      Q_E_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_P_output.bin",
+      Q_P_output);
+  write_file_fl64(
+      "../plot/data_avx2_16i_add_16i_mul_single_mulacc/Q_L_output.bin",
+      Q_L_output);
 
   //----------------------------------------------------------------------------
 

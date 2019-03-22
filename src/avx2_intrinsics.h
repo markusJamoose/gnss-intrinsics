@@ -11,6 +11,7 @@
 
 #include "immintrin.h"
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 
 /*!
@@ -22,18 +23,18 @@
  * be generated \param[in] carr_freq Carrier frequency of the sinusoidal wave
  *  \param[in] samp_freq Sampling frequency of the signal to be generated
  */
-void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
+void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int32_t blk_size,
                    const double rem_carr_phase, const double carr_freq,
                    const double samp_freq) {
-  int inda;
-  const unsigned int eight_points = blk_size / 8;
-  const unsigned int nom_carr_step =
-      (unsigned int)(carr_freq * (4294967296.0 / samp_freq) + 0.5);
+  int32_t inda;
+  const uint32_t eight_points = blk_size / 8;
+  const uint32_t nom_carr_step =
+      (uint32_t)(carr_freq * (4294967296.0 / samp_freq) + 0.5);
 
   // Declarations for serial implementation
-  unsigned int nom_carr_phase_base =
-      (unsigned int)(rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
-  unsigned int nom_carr_idx = 0;
+  uint32_t nom_carr_phase_base =
+      (uint32_t)(rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
+  uint32_t nom_carr_idx = 0;
 
   // Important variable declarations
   __m256i carr_phase_base = _mm256_set1_epi32(nom_carr_phase_base);
@@ -42,8 +43,8 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
                        4 * nom_carr_step, 3 * nom_carr_step, 2 * nom_carr_step,
                        1 * nom_carr_step, 0 * nom_carr_step);
   __m256i carr_idx = _mm256_set1_epi32(0);
-  __m256i hex_ff =
-      _mm256_set_epi32(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
+  //__m256i hex_ff = _mm256_set_epi32(0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+  //0xFF);
   __m256i nco;
   __m256i carr_step_offset = _mm256_set1_epi32(8 * nom_carr_step);
 
@@ -70,7 +71,7 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
   }
 
   inda = eight_points * 8;
-  nom_carr_phase_base = (unsigned int)_mm256_extract_epi32(carr_phase_base, 7);
+  nom_carr_phase_base = (uint32_t)_mm256_extract_epi32(carr_phase_base, 7);
 
   // generate buffer of output
   for (; inda < blk_size; ++inda) {
@@ -93,31 +94,25 @@ void avx2_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
  * be generated \param[in] carr_freq Carrier frequency of the sinusoidal wave
  *  \param[in] samp_freq Sampling frequency of the signal to be generated
  */
-void avx2_nom_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
-                       const double rem_carr_phase, const double carr_freq,
-                       const double samp_freq) {
+void avx2_nom_nco_si32(int32_t *sig_nco, const int32_t *lut,
+                       const int32_t blk_size, const double rem_carr_phase,
+                       const double carr_freq, const double samp_freq) {
 
-  unsigned int carrPhaseBase =
+  uint32_t carrPhaseBase =
       (rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
-  unsigned int carrStep = (carr_freq * (4294967296.0 / samp_freq) + 0.5);
-  unsigned int carrIndex = 0;
-  int inda;
-
-  // Store this values for debug purposes only
-  unsigned int carrPhaseBaseVec[blk_size];
-  unsigned int carrIndexVec[blk_size];
+  uint32_t carrStep = (carr_freq * (4294967296.0 / samp_freq) + 0.5);
+  uint32_t carrIndex = 0;
+  int32_t inda;
 
   // for each sample
   for (inda = 0; inda < blk_size; ++inda) {
     // Obtain integer index in 8:24 number
-    carrIndexVec[inda] = carrIndex;
     carrIndex = (carrPhaseBase >> 24) & 0xFF;
 
     // Look in lut
     sig_nco[inda] = lut[carrIndex];
 
     // Delta step
-    carrPhaseBaseVec[inda] = carrPhaseBase;
     carrPhaseBase += carrStep;
   }
 }
@@ -134,15 +129,15 @@ void avx2_nom_nco_si32(int32_t *sig_nco, const int32_t *lut, const int blk_size,
  *  \param[in] samp_freq Number of points to Multiply in the operation
  */
 void avx2_nom_code_si32(int32_t *ecode, int32_t *pcode, int32_t *lcode,
-                        const int32_t *cacode, const int blk_size,
+                        const int32_t *cacode, const int32_t blk_size,
                         const double rem_code_phase, const double code_freq,
                         const double samp_freq) {
 
-  int inda;
+  int32_t inda;
   double earlyLateSpc = 0.5;
   double codePhaseStep = code_freq / samp_freq;
   double baseCode;
-  int pCodeIdx, eCodeIdx, lCodeIdx;
+  int32_t pCodeIdx, eCodeIdx, lCodeIdx;
 
   // for each sample
   for (inda = 0; inda < blk_size; ++inda) {
@@ -173,16 +168,16 @@ void avx2_nom_code_si32(int32_t *ecode, int32_t *pcode, int32_t *lcode,
  *  \param[in] samp_freq Number of points to Multiply in the operation
  */
 void avx2_code_si32(int32_t *ecode, int32_t *pcode, int32_t *lcode,
-                    const int32_t *cacode, const int blk_size,
+                    const int32_t *cacode, const int32_t blk_size,
                     const float rem_code_phase, const float code_freq,
                     const float samp_freq) {
 
-  int inda;
-  const unsigned int eight_points = blk_size / 8;
+  int32_t inda;
+  const uint32_t eight_points = blk_size / 8;
   float earlyLateSpc = 0.5;
   float codePhaseStep = code_freq / samp_freq;
   float baseCode;
-  int pCodeIdx, eCodeIdx, lCodeIdx;
+  int32_t pCodeIdx, eCodeIdx, lCodeIdx;
 
   // Important variable declarations
   __m256 ecode_phase_base = _mm256_set1_ps(rem_code_phase - earlyLateSpc + 0.5);
@@ -260,18 +255,18 @@ void avx2_code_si32(int32_t *ecode, int32_t *pcode, int32_t *lcode,
  * be generated \param[in] carr_freq Carrier frequency of the sinusoidal wave
  *  \param[in] samp_freq Sampling frequency of the signal to be generated
  */
-void avx2_nco_fl32(float *sig_nco, const float *lut, const int blk_size,
+void avx2_nco_fl32(float *sig_nco, const float *lut, const int32_t blk_size,
                    const double rem_carr_phase, const double carr_freq,
                    const double samp_freq) {
-  int inda;
-  const unsigned int eight_points = blk_size / 8;
-  const unsigned int nom_carr_step =
-      (unsigned int)(carr_freq * (4294967296.0 / samp_freq) + 0.5);
+  int32_t inda;
+  const uint32_t eight_points = blk_size / 8;
+  const uint32_t nom_carr_step =
+      (uint32_t)(carr_freq * (4294967296.0 / samp_freq) + 0.5);
 
   // Declarations for serial implementation
-  unsigned int nom_carr_phase_base =
-      (unsigned int)(rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
-  unsigned int nom_carr_idx = 0;
+  uint32_t nom_carr_phase_base =
+      (uint32_t)(rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
+  uint32_t nom_carr_idx = 0;
 
   // Important variable declarations
   __m256i carr_phase_base = _mm256_set1_epi32(nom_carr_phase_base);
@@ -308,7 +303,7 @@ void avx2_nco_fl32(float *sig_nco, const float *lut, const int blk_size,
   }
 
   inda = eight_points * 8;
-  nom_carr_phase_base = (unsigned int)_mm256_extract_epi32(carr_phase_base, 7);
+  nom_carr_phase_base = (uint32_t)_mm256_extract_epi32(carr_phase_base, 7);
 
   // generate buffer of output
   for (; inda < blk_size; ++inda) {
@@ -330,31 +325,25 @@ void avx2_nco_fl32(float *sig_nco, const float *lut, const int blk_size,
  * be generated \param[in] carr_freq Carrier frequency of the sinusoidal wave
  *  \param[in] samp_freq Sampling frequency of the signal to be generated
  */
-void avx2_nom_nco_fl32(float *sig_nco, const float *lut, const int blk_size,
+void avx2_nom_nco_fl32(float *sig_nco, const float *lut, const int32_t blk_size,
                        const double rem_carr_phase, const double carr_freq,
                        const double samp_freq) {
 
-  unsigned int carrPhaseBase =
+  uint32_t carrPhaseBase =
       (rem_carr_phase * (4294967296.0 / (2.0 * M_PI)) + 0.5);
-  unsigned int carrStep = (carr_freq * (4294967296.0 / samp_freq) + 0.5);
-  unsigned int carrIndex = 0;
-  int inda;
-
-  // Store this values for debug purposes only
-  unsigned int carrPhaseBaseVec[blk_size];
-  unsigned int carrIndexVec[blk_size];
+  uint32_t carrStep = (carr_freq * (4294967296.0 / samp_freq) + 0.5);
+  uint32_t carrIndex = 0;
+  int32_t inda;
 
   // for each sample
   for (inda = 0; inda < blk_size; ++inda) {
     // Obtain integer index in 8:24 number
-    carrIndexVec[inda] = carrIndex;
     carrIndex = (carrPhaseBase >> 24) & 0xFF;
 
     // Look in lut
     sig_nco[inda] = lut[carrIndex];
 
     // Delta step
-    carrPhaseBaseVec[inda] = carrPhaseBase;
     carrPhaseBase += carrStep;
   }
 }
@@ -370,15 +359,15 @@ void avx2_nom_nco_fl32(float *sig_nco, const float *lut, const int blk_size,
  * generated
  */
 void avx2_nom_code_fl32(float *ecode, float *pcode, float *lcode,
-                        const float *cacode, const int blk_size,
+                        const float *cacode, const int32_t blk_size,
                         const double rem_code_phase, const double code_freq,
                         const double samp_freq) {
 
-  int inda;
+  int32_t inda;
   double earlyLateSpc = 0.5;
   double codePhaseStep = code_freq / samp_freq;
   double baseCode;
-  int pCodeIdx, eCodeIdx, lCodeIdx;
+  int32_t pCodeIdx, eCodeIdx, lCodeIdx;
 
   // for each sample
   for (inda = 0; inda < blk_size; ++inda) {
@@ -410,16 +399,16 @@ void avx2_nom_code_fl32(float *ecode, float *pcode, float *lcode,
  *  \param[in] samp_freq Sampling frequency of the signal to be generated
  */
 void avx2_code_fl32(float *ecode, float *pcode, float *lcode,
-                    const float *cacode, const int blk_size,
+                    const float *cacode, const int32_t blk_size,
                     const float rem_code_phase, const float code_freq,
                     const float samp_freq) {
 
-  int inda;
-  const unsigned int eight_points = blk_size / 8;
+  int32_t inda;
+  const uint32_t eight_points = blk_size / 8;
   float earlyLateSpc = 0.5;
   float codePhaseStep = code_freq / samp_freq;
   float baseCode;
-  int pCodeIdx, eCodeIdx, lCodeIdx;
+  int32_t pCodeIdx, eCodeIdx, lCodeIdx;
 
   // Important variable declarations
   __m256 ecode_phase_base = _mm256_set1_ps(rem_code_phase - earlyLateSpc + 0.5);
@@ -497,11 +486,11 @@ void avx2_code_fl32(float *ecode, float *pcode, float *lcode,
  */
 static inline float avx2_mul_and_acc_fl32(const float *aVector,
                                           const float *bVector,
-                                          unsigned int num_points) {
+                                          uint32_t num_points) {
 
   float returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int eigthPoints = num_points / 8;
+  uint32_t number = 0;
+  const uint32_t eigthPoints = num_points / 8;
 
   const float *aPtr = aVector;
   const float *bPtr = bVector;
@@ -558,10 +547,10 @@ static inline float avx2_mul_and_acc_fl32(const float *aVector,
  */
 static inline void avx2_fl32_x2_mul_fl32(float *cVector, const float *aVector,
                                          const float *bVector,
-                                         unsigned int num_points) {
+                                         uint32_t num_points) {
 
-  unsigned int number = 0;
-  const unsigned int eigthPoints = num_points / 8;
+  uint32_t number = 0;
+  const uint32_t eigthPoints = num_points / 8;
 
   float *cPtr = cVector;
   const float *aPtr = aVector;
@@ -599,17 +588,17 @@ static inline void avx2_fl32_x2_mul_fl32(float *cVector, const float *aVector,
  * \param[in] bvector Second vector to multiply
  * \param[in] num_points Number of points in each vector
  */
-static inline double avx2_mul_and_acc_si32(const int *aVector,
-                                           const int *bVector,
-                                           unsigned int num_points) {
+static inline double avx2_mul_and_acc_si32(const int32_t *aVector,
+                                           const int32_t *bVector,
+                                           uint32_t num_points) {
 
-  int returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int eigthPoints = num_points / 8;
+  int32_t returnValue = 0;
+  uint32_t number = 0;
+  const uint32_t eigthPoints = num_points / 8;
 
-  const int *aPtr = aVector;
-  const int *bPtr = bVector;
-  int tempBuffer[8];
+  const int32_t *aPtr = aVector;
+  const int32_t *bPtr = bVector;
+  int32_t tempBuffer[8];
 
   __m256i aVal, bVal, cVal;
   __m256i accumulator = _mm256_setzero_si256();
@@ -660,16 +649,17 @@ static inline double avx2_mul_and_acc_si32(const int *aVector,
  * \param[in] num_points Number of points in each
  * vector
  */
-static inline void avx2_si32_x2_mul_si32(int *cVector, const int *aVector,
-                                         const int *bVector,
-                                         unsigned int num_points) {
+static inline void avx2_si32_x2_mul_si32(int32_t *cVector,
+                                         const int32_t *aVector,
+                                         const int32_t *bVector,
+                                         uint32_t num_points) {
 
-  unsigned int number = 0;
-  const unsigned int eigthPoints = num_points / 8;
+  uint32_t number = 0;
+  const uint32_t eigthPoints = num_points / 8;
 
-  int *cPtr = cVector;
-  const int *aPtr = aVector;
-  const int *bPtr = bVector;
+  int32_t *cPtr = cVector;
+  const int32_t *aPtr = aVector;
+  const int32_t *bPtr = bVector;
 
   __m256i aVal, bVal, cVal;
 
@@ -707,11 +697,10 @@ static inline void avx2_si32_x2_mul_si32(int *cVector, const int *aVector,
  * \param[in] num_points Number of points in each vector
  */
 static inline void avx2_mul_short(short *cVector, const short *aVector,
-                                  const short *bVector,
-                                  unsigned int num_points) {
+                                  const short *bVector, uint32_t num_points) {
 
-  unsigned int number = 0;
-  const unsigned int sixteenthPoints = num_points / 16;
+  uint32_t number = 0;
+  const uint32_t sixteenthPoints = num_points / 16;
 
   short *cPtr = cVector;
   const short *aPtr = aVector;
@@ -754,10 +743,10 @@ static inline void avx2_mul_short(short *cVector, const short *aVector,
  * \param[in] num_points Number of points in each vector
  */
 static inline double avx_accumulate_short(const short *inputBuffer,
-                                          unsigned int num_points) {
-  int returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int sixteenthPoints = num_points / 16;
+                                          uint32_t num_points) {
+  int32_t returnValue = 0;
+  uint32_t number = 0;
+  const uint32_t sixteenthPoints = num_points / 16;
 
   const short *aPtr = inputBuffer;
   /*__VOLK_ATTR_ALIGNED(32)*/ short tempBuffer[16];
@@ -805,10 +794,10 @@ static inline double avx_accumulate_short(const short *inputBuffer,
  * \param[in] num_points Number of points in each vector
  */
 static inline double avx_accumulate_short_unsat(const short *inputBuffer,
-                                                unsigned int num_points) {
-  int returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int sixteenthPoints = num_points / 16;
+                                                uint32_t num_points) {
+  int32_t returnValue = 0;
+  uint32_t number = 0;
+  const uint32_t sixteenthPoints = num_points / 16;
 
   const short *aPtr = inputBuffer;
   /*__VOLK_ATTR_ALIGNED(32)*/ short tempBuffer[16];
@@ -857,11 +846,11 @@ static inline double avx_accumulate_short_unsat(const short *inputBuffer,
  */
 static inline double avx2_mul_and_acc_short(const short *aVector,
                                             const short *bVector,
-                                            unsigned int num_points) {
+                                            uint32_t num_points) {
 
-  int returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int sixteenthPoints = num_points / 16;
+  int32_t returnValue = 0;
+  uint32_t number = 0;
+  const uint32_t sixteenthPoints = num_points / 16;
 
   const short *aPtr = aVector;
   const short *bPtr = bVector;
@@ -927,10 +916,10 @@ static inline double avx2_mul_and_acc_short(const short *aVector,
 static inline void avx2_mul_short_store_int(short *cVector,
                                             const short *aVector,
                                             const short *bVector,
-                                            unsigned int num_points) {
+                                            uint32_t num_points) {
 
-  unsigned int number = 0;
-  const unsigned int sixteenthPoints = num_points / 16;
+  uint32_t number = 0;
+  const uint32_t sixteenthPoints = num_points / 16;
 
   short *cPtr = cVector;
   const short *aPtr = aVector;
@@ -972,14 +961,14 @@ static inline void avx2_mul_short_store_int(short *cVector,
  * \param[in] inputBuffer Elements stored in dedicated vector
  * \param[in] num_points Number of points in each vector
  */
-static inline double avx_accumulate_int(const int *inputBuffer,
-                                        unsigned int num_points) {
-  int returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int eighthPoints = num_points / 8;
+static inline double avx_accumulate_int(const int32_t *inputBuffer,
+                                        uint32_t num_points) {
+  int32_t returnValue = 0;
+  uint32_t number = 0;
+  const uint32_t eighthPoints = num_points / 8;
 
-  const int *aPtr = inputBuffer;
-  /*__VOLK_ATTR_ALIGNED(32)*/ int tempBuffer[8];
+  const int32_t *aPtr = inputBuffer;
+  int32_t tempBuffer[8];
 
   __m256i accumulator = _mm256_setzero_si256();
   __m256i aVal = _mm256_setzero_si256();

@@ -21,8 +21,10 @@ $ gcc -I ../src/ trackC_standalone_avx512_16i_add_16i_mul_single_mulacc.c -g
  */
 
 #include "avx512_intrinsics.h"
-#include "read_bin.h" // For getting values from bin files
+#include "read_bin.h"
+#include "write_bin.h"
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,10 +45,8 @@ int main() {
   double remCodePhase, remCarrPhase, codePhaseStep;
   double earlyLateSpc, seekvalue, samplingFreq, trigarg, carrCos, carrSin,
       carrFreq;
-  double I_E, Q_E, I_P, Q_P, I_L, Q_L, mixedcarrSin, mixedcarrCos, baseCode,
-      mixedcarrSinLHCP;
-  double mixedcarrCosLHCP, carrNco, oldCarrNco, tau1carr, tau2carr, carrError,
-      oldCarrError;
+  double I_E, Q_E, I_P, Q_P, I_L, Q_L, mixedcarrSin, mixedcarrCos, baseCode;
+  double carrNco, oldCarrNco, tau1carr, tau2carr, carrError, oldCarrError;
   double PDIcarr, codeNco, oldCodeNco, tau1code, tau2code, codeError,
       oldCodeError, PDIcode;
   double codeFreq, codeFreqBasis, carrFreqBasis, absoluteSample, codeLength;
@@ -57,8 +57,7 @@ int main() {
   long int codePeriods;
   const double pi = 3.1415926535;
 
-  FILE *fpdata, *fpdataLHCP;
-  clock_t time_1, time_2, time_3, time_4;
+  FILE *fpdata;
 
   // Initialization
   remCodePhase = 0;
@@ -101,8 +100,6 @@ int main() {
       1023002.79220779; // getDoubleFromFile("text_data_files/codeFreqBasis.bin");
   codeLength = getDoubleFromFile("data/codeLength.bin");
   codePeriods = (long int)getIntFromFile("data/codePeriods.bin");
-  // I removed the new line and added \n... this might cause issues
-  char trackingStatus[] = "Tracking: Ch 1 of 8 \n PRN:22";
   dataAdaptCoeff = getIntFromFile("data/dataAdaptCoeff.bin");
   vsmInterval = getIntFromFile("data/VSMinterval.bin");
   accInt = getDoubleFromFile("data/accTime.bin");
@@ -296,39 +293,46 @@ int main() {
 
   fclose(fpdata);
 
-  // Write early, late, prompt values to bin files:-----------------------------
-
-  // Write I_E_output to bin file
-  FILE *fp = fopen(
-      "plot/data_avx512_16i_add_16i_mul_single_mulacc/I_E_output.bin", "wb");
-  fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
-
-  // Write I_P_output to bin file
-  fp = fopen("plot/data_avx512_16i_add_16i_mul_single_mulacc/I_P_output.bin",
-             "wb");
-  fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
-
-  // Write I_L_output to bin file
-  fp = fopen("plot/data_avx512_16i_add_16i_mul_single_mulacc/I_L_output.bin",
-             "wb");
-  fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
-
-  // Write Q_E_output to bin file
-  fp = fopen("plot/data_avx512_16i_add_16i_mul_single_mulacc/Q_E_output.bin",
-             "wb");
-  fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
-
-  // Write Q_P_output to bin file
-  fp = fopen("plot/data_avx512_16i_add_16i_mul_single_mulacc/Q_P_output.bin",
-             "wb");
-  fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
-
-  // Write Q_L_output to bin file
-  fp = fopen("plot/data_avx512_16i_add_16i_mul_single_mulacc/Q_L_output.bin",
-             "wb");
-  fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
-
-  //----------------------------------------------------------------------------
+  // Clearing unused variables for logging operations
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/codeNco_output.bin",
+      codeNco_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/codeError_output.bin",
+      codeError_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/carrNco_output.bin",
+      carrNco_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/carrError_output.bin",
+      carrError_output);
+  write_file_fl64("../plot/data_avx512_16i_add_16i_mul_single_mulacc/"
+                  "absoluteSample_output.bin",
+                  absoluteSample_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/carrFreq_output.bin",
+      carrFreq_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/codeFreq_output.bin",
+      codeFreq_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/I_E_output.bin",
+      I_E_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/I_P_output.bin",
+      I_P_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/I_L_output.bin",
+      I_L_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/Q_E_output.bin",
+      Q_E_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/Q_P_output.bin",
+      Q_P_output);
+  write_file_fl64(
+      "../plot/data_avx512_16i_add_16i_mul_single_mulacc/Q_L_output.bin",
+      Q_L_output);
 
   return 0;
 }

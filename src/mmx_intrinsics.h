@@ -9,27 +9,28 @@
  */
 
 #include "mmintrin.h"
+#include <stdint.h>
 #include <stdio.h>
 
 /*!
- *  \brief     Multiply and accumulate two vectors of short integers with MMX
+ *  \brief     Multiply and accumulate two vectors of int16_t integers with MMX
  * intrinsic functions \details   This class is used to demonstrate a number of
- * section commands. \param[out] int returnValue as result of multiplication and
- * accumulation \param[in] aVector Source vector with factors to multiply
+ * section commands. \param[out] int32_t returnValue as result of multiplication
+ * and accumulation \param[in] aVector Source vector with factors to multiply
  *  \param[in] bVector Source vector with factors to multiply
  *  \param[in] num_points Number of points to Multiply in the operation
  */
-static inline double mmx_mul_and_acc_short(const short *aVector,
-                                           const short *bVector,
-                                           unsigned int num_points) {
+static inline double mmx_mul_and_acc_short(const int16_t *aVector,
+                                           const int16_t *bVector,
+                                           uint32_t num_points) {
 
-  int returnValue = 0;
-  unsigned int number = 0;
-  const unsigned int quarterPoints = num_points / 4;
+  int32_t returnValue = 0;
+  uint32_t number = 0;
+  const uint32_t quarterPoints = num_points / 4;
 
-  const short *aPtr = aVector;
-  const short *bPtr = bVector;
-  short tempBuffer[4];
+  const int16_t *aPtr = aVector;
+  const int16_t *bPtr = bVector;
+  int16_t tempBuffer[4];
 
   __m64 aVal, bVal, cVal;
   __m64 accumulator = _mm_setzero_si64();
@@ -41,8 +42,6 @@ static inline double mmx_mul_and_acc_short(const short *aVector,
     aVal = _m_from_int64(*aPtr);
     bVal = _m_from_int64(*bPtr);
 
-    // TODO: More efficient way to exclude having this intermediate cVal
-    // variable??
     cVal = _mm_mullo_pi16(aVal, bVal);
 
     accumulator = _mm_adds_pi16(accumulator, cVal);

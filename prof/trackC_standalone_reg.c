@@ -20,7 +20,9 @@ $ gcc -I ../src/ trackC_standalone_reg.c -g
  */
 
 #include "read_bin.h"
+#include "write_bin.h"
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,28 +36,24 @@ $ gcc -I ../src/ trackC_standalone_reg.c -g
 int main() {
 
   // Declarations
-  int i, loopcount, angle, blksize, pCode, eCode, lCode, channelNr,
-      totalChannels;
-  int vsmCount, vsmInterval, PRN, dataAdaptCoeff;
+  int i, loopcount, angle, blksize, pCode, eCode, lCode;
+  int vsmCount, vsmInterval, dataAdaptCoeff;
   double remCodePhase, remCarrPhase, codePhaseStep;
   double earlyLateSpc, seekvalue, samplingFreq, trigarg, carrCos, carrSin,
       carrFreq;
-  double I_E, Q_E, I_P, Q_P, I_L, Q_L, mixedcarrSin, mixedcarrCos, baseCode,
-      mixedcarrSinLHCP;
-  double mixedcarrCosLHCP, carrNco, oldCarrNco, tau1carr, tau2carr, carrError,
-      oldCarrError;
+  double I_E, Q_E, I_P, Q_P, I_L, Q_L, baseCode, mixedcarrSin = 0.0,
+                                                 mixedcarrCos = 0.0;
+  double carrNco, oldCarrNco, tau1carr, tau2carr, carrError, oldCarrError;
   double PDIcarr, codeNco, oldCodeNco, tau1code, tau2code, codeError,
       oldCodeError, PDIcode;
   double codeFreq, codeFreqBasis, carrFreqBasis, absoluteSample, codeLength;
   double pwr, pwrSum, pwrSqrSum, pwrMean, pwrVar, pwrAvgSqr, pwrAvg, noiseVar,
-      CNo, accInt, *pos;
+      CNo, accInt;
   char *rawSignal, *rawSignalI, *rawSignalQ;
-  char trackingStatusUpdated[100], arg[20];
   long int codePeriods;
   const double pi = 3.1415926535;
 
-  FILE *fpdata, *fpdataLHCP;
-  clock_t time_1, time_2, time_3, time_4;
+  FILE *fpdata;
 
   // Initialization
   remCodePhase = 0;
@@ -97,8 +95,6 @@ int main() {
   codeFreqBasis = 1023002.79220779;
   codeLength = getDoubleFromFile("../data/codeLength.bin");
   codePeriods = (long int)getIntFromFile("../data/codePeriods.bin");
-  // I removed the new line and added \n... this might cause issues
-  char trackingStatus[] = "Tracking: Ch 1 of 8 \n PRN:22";
   dataAdaptCoeff = getIntFromFile("../data/dataAdaptCoeff.bin");
   vsmInterval = getIntFromFile("../data/VSMinterval.bin");
   accInt = getDoubleFromFile("../data/accTime.bin");
@@ -269,33 +265,23 @@ int main() {
     Q_P_output[loopcount] = Q_P;                       // Q_P
     Q_L_output[loopcount] = Q_L;                       // Q_L
   }
-  // mexCallMATLAB(0,NULL,1, &hwb, "close");
-
   fclose(fpdata);
 
-  // Write I_E_output to bin file
-  FILE *fp = fopen("../plot/data_reg/I_E_output.bin", "wb");
-  fwrite(I_E_output, sizeof *I_E_output, 37000, fp);
+  // Clearing unused variables for logging operations
+  write_file_fl64("../plot/data_reg/codeNco_output.bin", codeNco_output);
+  write_file_fl64("../plot/data_reg/codeError_output.bin", codeError_output);
+  write_file_fl64("../plot/data_reg/carrNco_output.bin", carrNco_output);
+  write_file_fl64("../plot/data_reg/carrError_output.bin", carrError_output);
+  write_file_fl64("../plot/data_reg/absoluteSample_output.bin",
+                  absoluteSample_output);
+  write_file_fl64("../plot/data_reg/carrFreq_output.bin", carrFreq_output);
+  write_file_fl64("../plot/data_reg/codeFreq_output.bin", codeFreq_output);
+  write_file_fl64("../plot/data_reg/I_E_output.bin", I_E_output);
+  write_file_fl64("../plot/data_reg/I_P_output.bin", I_P_output);
+  write_file_fl64("../plot/data_reg/I_L_output.bin", I_L_output);
+  write_file_fl64("../plot/data_reg/Q_E_output.bin", Q_E_output);
+  write_file_fl64("../plot/data_reg/Q_P_output.bin", Q_P_output);
+  write_file_fl64("../plot/data_reg/Q_L_output.bin", Q_L_output);
 
-  // Write I_P_output to bin file
-  fp = fopen("../plot/data_reg/I_P_output.bin", "wb");
-  fwrite(I_P_output, sizeof *I_P_output, 37000, fp);
-
-  // Write I_L_output to bin file
-  fp = fopen("../plot/data_reg/I_L_output.bin", "wb");
-  fwrite(I_L_output, sizeof *I_L_output, 37000, fp);
-
-  // Write Q_E_output to bin file
-  fp = fopen("../plot/data_reg/Q_E_output.bin", "wb");
-  fwrite(Q_E_output, sizeof *Q_E_output, 37000, fp);
-
-  // Write Q_P_output to bin file
-  fp = fopen("../plot/data_reg/Q_P_output.bin", "wb");
-  fwrite(Q_P_output, sizeof *Q_P_output, 37000, fp);
-
-  // Write Q_L_output to bin file
-  fp = fopen("../plot/data_reg/Q_L_output.bin", "wb");
-  fwrite(Q_L_output, sizeof *Q_L_output, 37000, fp);
-
-  return 0;
+  return EXIT_SUCCESS;
 }
