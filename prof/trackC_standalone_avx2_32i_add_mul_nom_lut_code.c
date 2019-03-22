@@ -22,7 +22,9 @@ $ gcc -I ../src/ trackC_standalone_avx2_32i_add_mul_nom_lut_code.c -g
 
 #include "avx2_intrinsics.h"
 #include "read_bin.h"
+#include "write_bin.h"
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,28 +39,22 @@ int main() {
 
   // Declarations
 
-  int i, loopcount, angle, blksize, pCode, eCode, lCode, channelNr,
-      totalChannels;
-  int vsmCount, vsmInterval, PRN, dataAdaptCoeff;
+  int i, loopcount, blksize;
+  int vsmCount, vsmInterval, dataAdaptCoeff;
   double remCodePhase, remCarrPhase, codePhaseStep;
-  double earlyLateSpc, seekvalue, samplingFreq, trigarg, carrCos, carrSin,
-      carrFreq;
-  double I_E, Q_E, I_P, Q_P, I_L, Q_L, mixedcarrSin, mixedcarrCos, baseCode,
-      mixedcarrSinLHCP;
-  double mixedcarrCosLHCP, carrNco, oldCarrNco, tau1carr, tau2carr, carrError,
-      oldCarrError;
+  double earlyLateSpc, seekvalue, samplingFreq, trigarg, carrFreq;
+  double I_E, Q_E, I_P, Q_P, I_L, Q_L;
+  double carrNco, oldCarrNco, tau1carr, tau2carr, carrError, oldCarrError;
   double PDIcarr, codeNco, oldCodeNco, tau1code, tau2code, codeError,
       oldCodeError, PDIcode;
   double codeFreq, codeFreqBasis, carrFreqBasis, absoluteSample, codeLength;
   double pwr, pwrSum, pwrSqrSum, pwrMean, pwrVar, pwrAvgSqr, pwrAvg, noiseVar,
-      CNo, accInt, *pos;
-  char *rawSignal, *rawSignalI, *rawSignalQ;
-  char trackingStatusUpdated[100], arg[20];
+      CNo, accInt;
+  char *rawSignal;
   long int codePeriods;
   const double pi = 3.1415926535;
 
-  FILE *fpdata, *fpdataLHCP;
-  clock_t time_1, time_2, time_3, time_4;
+  FILE *fpdata;
 
   // Initialization
   remCodePhase = 0;
@@ -101,8 +97,6 @@ int main() {
       1023002.79220779; // getDoubleFromFile("text_data_files/codeFreqBasis.bin");
   codeLength = getDoubleFromFile("../data/codeLength.bin");
   codePeriods = (long int)getIntFromFile("../data/codePeriods.bin");
-  // I removed the new line and added \n... this might cause issues
-  char trackingStatus[] = "Tracking: Ch 1 of 8 \n PRN:22";
   dataAdaptCoeff = getIntFromFile("../data/dataAdaptCoeff.bin");
   vsmInterval = getIntFromFile("../data/VSMinterval.bin");
   accInt = getDoubleFromFile("../data/accTime.bin");
@@ -127,12 +121,6 @@ int main() {
   const int lutSize = 256;       // [N=number of bits]
   int32_t sin_LUT_si32[lutSize]; // our sine wave LUT
   int32_t cos_LUT_si32[lutSize]; // our sine wave LUT
-  const float delta_phi =
-      (float)carrFreqBasis / samplingFreq * blksize; // phase increment
-
-  int16_t sig_nco_si16[blksize]; // output buffer
-  int32_t sig_nco_si32[blksize]; // output buffer
-  float sig_nco_fl32[blksize];   // output buffer
 
   // Allocate memory for the signal
   rawSignal = calloc(dataAdaptCoeff * blksize, sizeof(char));
@@ -173,12 +161,6 @@ int main() {
     // can be read
 
     // instantiate vectors
-    double trigarg_vec[blksize];
-    double angle_vec[blksize];
-
-    double carrCos_vec[blksize];
-    double carrSin_vec[blksize];
-
     int32_t mixedcarrSin_vec[blksize];
     int32_t mixedcarrCos_vec[blksize];
     int32_t sin_nco_si32[blksize];
@@ -297,34 +279,40 @@ int main() {
 
   fclose(fpdata);
 
-  // Write early, late, prompt values to bin files:-----------------------------
-
-  // Write I_E_output to bin file
-  FILE *fp =
-      fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/I_E_output.bin", "wb");
-  fwrite(I_E_output, sizeof *I_E_output, 50000, fp);
-
-  // Write I_P_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/I_P_output.bin", "wb");
-  fwrite(I_P_output, sizeof *I_P_output, 50000, fp);
-
-  // Write I_L_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/I_L_output.bin", "wb");
-  fwrite(I_L_output, sizeof *I_L_output, 50000, fp);
-
-  // Write Q_E_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_E_output.bin", "wb");
-  fwrite(Q_E_output, sizeof *Q_E_output, 50000, fp);
-
-  // Write Q_P_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_P_output.bin", "wb");
-  fwrite(Q_P_output, sizeof *Q_P_output, 50000, fp);
-
-  // Write Q_L_output to bin file
-  fp = fopen("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_L_output.bin", "wb");
-  fwrite(Q_L_output, sizeof *Q_L_output, 50000, fp);
-
-  //----------------------------------------------------------------------------
+  // Clearing unused variables for logging operations
+  write_file_fl64(
+      "../plot/data_avx2_32i_add_mul_nom_lut_code/codeNco_output.bin",
+      codeNco_output);
+  write_file_fl64(
+      "../plot/data_avx2_32i_add_mul_nom_lut_code/codeError_output.bin",
+      codeError_output);
+  write_file_fl64(
+      "../plot/data_avx2_32i_add_mul_nom_lut_code/carrNco_output.bin",
+      carrNco_output);
+  write_file_fl64(
+      "../plot/data_avx2_32i_add_mul_nom_lut_code/carrError_output.bin",
+      carrError_output);
+  write_file_fl64(
+      "../plot/data_avx2_32i_add_mul_nom_lut_code/absoluteSample_output.bin",
+      absoluteSample_output);
+  write_file_fl64(
+      "../plot/data_avx2_32i_add_mul_nom_lut_code/carrFreq_output.bin",
+      carrFreq_output);
+  write_file_fl64(
+      "../plot/data_avx2_32i_add_mul_nom_lut_code/codeFreq_output.bin",
+      codeFreq_output);
+  write_file_fl64("../plot/data_avx2_32i_add_mul_nom_lut_code/I_E_output.bin",
+                  I_E_output);
+  write_file_fl64("../plot/data_avx2_32i_add_mul_nom_lut_code/I_P_output.bin",
+                  I_P_output);
+  write_file_fl64("../plot/data_avx2_32i_add_mul_nom_lut_code/I_L_output.bin",
+                  I_L_output);
+  write_file_fl64("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_E_output.bin",
+                  Q_E_output);
+  write_file_fl64("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_P_output.bin",
+                  Q_P_output);
+  write_file_fl64("../plot/data_avx2_32i_add_mul_nom_lut_code/Q_L_output.bin",
+                  Q_L_output);
 
   return 0;
 }

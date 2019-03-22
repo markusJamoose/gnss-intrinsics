@@ -7,6 +7,7 @@
  *  \date      Jan 23, 2018
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -50,7 +51,7 @@ int getIntFromFile(char file_name[1000]) {
   return b[0];
 }
 
-double getcaCodeFromFile(char file_name[1000], double *output_array) {
+int getcaCodeFromFile(char file_name[1000], double *output_array) {
   enum { SIZE = 1025 };
   double b[SIZE];
   FILE *fp = fopen(file_name, "rb");
@@ -70,9 +71,12 @@ double getcaCodeFromFile(char file_name[1000], double *output_array) {
     }
   }
   fclose(fp);
+
+  // Success if function reached this point
+  return EXIT_SUCCESS;
 }
 
-void getcaCodeFromFileAsInt(char file_name[1000], int *output_array) {
+int getcaCodeFromFileAsInt(char file_name[1000], int *output_array) {
   enum { SIZE = 1025 };
   double b[SIZE];
   FILE *fp = fopen(file_name, "rb");
@@ -92,9 +96,12 @@ void getcaCodeFromFileAsInt(char file_name[1000], int *output_array) {
     }
   }
   fclose(fp);
+
+  // Success if function reached this point
+  return EXIT_SUCCESS;
 }
 
-void getcaCodeFromFileAsFloat(char file_name[1000], float *output_array) {
+int getcaCodeFromFileAsFloat(char file_name[1000], float *output_array) {
   enum { SIZE = 1025 };
   double b[SIZE];
   FILE *fp = fopen(file_name, "rb");
@@ -114,9 +121,12 @@ void getcaCodeFromFileAsFloat(char file_name[1000], float *output_array) {
     }
   }
   fclose(fp);
+
+  // Success if function reached this point
+  return EXIT_SUCCESS;
 }
 
-void getDataFromFile(char file_name[1000], double *output_array, int size) {
+int getDataFromFile(char file_name[1000], double *output_array, int size) {
   double b[size];
   FILE *fp = fopen(file_name, "rb");
   size_t ret_code = fread(b, sizeof *b, size, fp); // reads an array of doubles
@@ -135,4 +145,7 @@ void getDataFromFile(char file_name[1000], double *output_array, int size) {
     }
   }
   fclose(fp);
+
+  // Success if function reached this point
+  return EXIT_SUCCESS;
 }

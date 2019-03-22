@@ -3,6 +3,7 @@ INC_DIR=../src/
 SRC_DIR=../prof/
 BIN_DIR=../install/
 DOC_DIR=../doc/
+PLT_DIR=../plot/
 
 # Compilation configurations
 CC=gcc
@@ -22,40 +23,58 @@ all:reg_standalone \
 reg_standalone:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_reg.c \
 	 -o $(BIN_DIR)reg_standalone $(DBG) $(AVX2_FLAGS) $(LIB) $(OPT)
+	# Create directory for data logging purposes
+	mkdir -p $(PLT_DIR)data_reg/
 
 ### AVX2 EXECUTABLES ###
 nom_si32_avx2:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx2_32i_add_mul_nom_lut_code.c \
 	 -o $(BIN_DIR)nom_si32_avx2 $(DBG) $(AVX2_FLAGS) $(LIB) $(OPT)
+	# Create directory for data logging purposes
+	mkdir -p $(PLT_DIR)data_avx2_32i_add_mul_nom_lut_code/
 
 avx_si32_avx2:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx2_32i_add_mul_avx_lut_code.c \
 	 -o $(BIN_DIR)avx_si32_avx2 $(DBG) $(AVX2_FLAGS) $(LIB) $(OPT)
+	# Create directory for data logging purposes
+	mkdir -p $(PLT_DIR)data_avx2_32i_add_mul_avx_lut_code/
 
 avx_fl32_avx2:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx2_fl32_add_mul_avx_lut_code.c \
 	 -o $(BIN_DIR)avx_fl32_avx2 $(DBG) $(AVX2_FLAGS) $(LIB) $(OPT)
+	 # Create directory for data logging purposes
+	 mkdir -p $(PLT_DIR)data_avx2_fl32_add_mul_avx_lut_code/
 
 nom_fl32_avx2:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx2_fl32_add_mul_nom_lut_code.c \
 	 -o $(BIN_DIR)nom_fl32_avx2 $(DBG) $(AVX2_FLAGS) $(LIB) $(OPT)
+	 # Create directory for data logging purposes
+	 mkdir -p $(PLT_DIR)data_avx2_fl32_add_mul_nom_lut_code/
 
 ### AVX512 EXECUTABLES ###
 nom_si32_avx512:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx512_si32_add_mul_nom_lut_code.c \
 	 -o $(BIN_DIR)nom_si32_avx512 $(DBG) $(AVX512_FLAGS) $(LIB) $(OPT)
+	 # Create directory for data logging purposes
+	 mkdir -p $(PLT_DIR)data_avx512_si32_add_mul_nom_lut_code/
 
 avx_si32_avx512:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx512_si32_add_mul_avx_lut_code.c \
 	 -o $(BIN_DIR)avx_si32_avx512 $(DBG) $(AVX512_FLAGS) $(LIB) $(OPT)
+	 # Create directory for data logging purposes
+	 mkdir -p $(PLT_DIR)data_avx512_si32_add_mul_avx_lut_code/
 
 avx_fl32_avx512:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx512_fl32_add_mul_avx_lut_code.c \
  	 -o $(BIN_DIR)avx_fl32_avx512 $(DBG) $(AVX512_FLAGS) $(LIB) $(OPT)
+	 # Create directory for data logging purposes
+	 mkdir -p $(PLT_DIR)data_avx512_fl32_add_mul_avx_lut_code/
 
 nom_fl32_avx512:
 	gcc $(INC) $(SRC_DIR)trackC_standalone_avx512_fl32_add_mul_nom_lut_code.c \
 	 -o $(BIN_DIR)nom_fl32_avx512 $(DBG) $(AVX512_FLAGS) $(LIB) $(OPT)
+	 # Create directory for data logging purposes
+	 mkdir -p $(PLT_DIR)data_avx512_fl32_add_mul_nom_lut_code/
 
 doc:
 	doxygen $(DOC_DIR)gnss-intrinsics-doxyfile
