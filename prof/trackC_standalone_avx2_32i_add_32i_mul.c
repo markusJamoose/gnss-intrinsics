@@ -135,8 +135,15 @@ int main() {
   fpdata = fopen(fileid, "rb");
   fseek(fpdata, dataAdaptCoeff * seekvalue, SEEK_SET);
 
-  // START MAIN LOOP
+  int sec_count = 0;
+  printf("\n*** Running: trackC_standalone_reg ***\n");
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
+
+    if (loopcount == 1000 * sec_count) {
+      printf("  [Completed: %d seconds]\r", sec_count);
+      fflush(stdout);
+      sec_count += 1;
+    }
 
     I_E = 0;
     Q_E = 0;
@@ -149,28 +156,13 @@ int main() {
     codePhaseStep = codeFreq / samplingFreq;
     blksize = ceil((codeLength - remCodePhase) / codePhaseStep);
 
-    ///////////////////////// NEW CODE
-    //////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     // Create blksize_arr
     double blksize_arr[blksize];
     for (i = 0; i < blksize; i++) {
       blksize_arr[i] = i;
     }
 
-    ///////////////////////// END NEW CODE
-    /////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////
-
     i = fread(rawSignal, sizeof(char), dataAdaptCoeff * blksize, fpdata);
-
-    ///////////////////////// NEW CODE
-    //////////////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // An error check should be added here to see if the required amount of data
-    // can be read
 
     // instantiate vectors
     double trigarg_vec[blksize];
@@ -210,11 +202,6 @@ int main() {
       angle_vec[i] = (int)(trigarg_vec[i] * 10000) % 62832;
       carrCos_vec[i] = (int32_t)(round(8 * (gps_cos(angle_vec[i]))));
       carrSin_vec[i] = (int32_t)(round(8 * (gps_sin(angle_vec[i]))));
-
-      // Assuming real data (dataAdaptCoeff=1):
-      // Mix to baseband
-      // mixedcarrSin_vec[i] = carrSin_vec[i] * (int32_t)rawSignal[i];
-      // mixedcarrCos_vec[i] = carrCos_vec[i] * (int32_t)rawSignal[i];
     }
 
     // Mix to baseband
@@ -240,12 +227,6 @@ int main() {
 
     // Q_P
     double Q_P = avx2_mul_and_acc_si32(pCode_vec, mixedcarrCos_vec, blksize);
-
-    //--------------------------------------------------------------------------
-
-    ///////////////////////////////////// END NEW CODE
-    ///////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////
 
     // Compute the VSM C/No
     pwr = I_P * I_P + Q_P * Q_P;
@@ -321,6 +302,8 @@ int main() {
   }
 
   fclose(fpdata);
+  printf(
+      "  [Logging data into the 'plot/data_avx2_32i_add_32i_mul' directory]\n");
 
   write_file_fl64("../plot/data_avx2_32i_add_32i_mul/codeNco_output.bin",
                   codeNco_output);
@@ -349,7 +332,7 @@ int main() {
   write_file_fl64("../plot/data_avx2_32i_add_32i_mul/Q_L_output.bin",
                   Q_L_output);
 
-  return 0;
-}
+  printf("*** Job Completed Succesfully! ***\n\n");
 
-// compile: gcc -g -mavx -march=haswell trackC_standalone_AVX2.c -lm
+  return EXIT_SUCCESS;
+}

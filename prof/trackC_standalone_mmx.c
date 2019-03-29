@@ -287,6 +287,7 @@ int main() {
   }
 
   fclose(fpdata);
+  printf("  [Logging data into the 'plot/data_mmx' directory]\n");
 
   // Clearing unused variables for logging operations
   write_file_fl64("../plot/data_mmx/codeNco_output.bin", codeNco_output);
@@ -304,7 +305,7 @@ int main() {
   write_file_fl64("../plot/data_mmx/Q_P_output.bin", Q_P_output);
   write_file_fl64("../plot/data_mmx/Q_L_output.bin", Q_L_output);
 
-  //----------------------------------------------------------------------------
+  printf("*** Job Completed Succesfully! ***\n\n");
 
-  return 0;
+  return EXIT_SUCCESS;
 }

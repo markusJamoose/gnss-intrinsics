@@ -133,8 +133,15 @@ int main() {
   fpdata = fopen(fileid, "rb");
   fseek(fpdata, dataAdaptCoeff * seekvalue, SEEK_SET);
 
-  // START MAIN LOOP
+  int sec_count = 0;
+  printf("\n*** Running: trackC_standalone_reg ***\n");
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
+
+    if (loopcount == 1000 * sec_count) {
+      printf("  [Completed: %d seconds]\r", sec_count);
+      fflush(stdout);
+      sec_count += 1;
+    }
 
     I_E = 0;
     Q_E = 0;
@@ -312,7 +319,8 @@ int main() {
   }
 
   fclose(fpdata);
-
+  printf("  [Logging data into the 'plot/data_avx2_16i_add_16i_mul_unsat_add' "
+         "directory]\n");
   // Clearing unused variables for logging operations
   write_file_fl64(
       "../plot/data_avx2_16i_add_16i_mul_unsat_add/codeNco_output.bin",
@@ -348,7 +356,7 @@ int main() {
   write_file_fl64("../plot/data_avx2_16i_add_16i_mul_unsat_add/Q_L_output.bin",
                   Q_L_output);
 
-  //----------------------------------------------------------------------------
+  printf("*** Job Completed Succesfully! ***\n\n");
 
-  return 0;
+  return EXIT_SUCCESS;
 }
