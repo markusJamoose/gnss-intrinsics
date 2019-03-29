@@ -49,3 +49,20 @@ $ cd install/
 # Configure script and run applications
 $ python profile_cpu_times.py
 ```
+
+## Running the code
+The code in the `prof` directory also serves as examples on how to use the library. Each file in the directory make use of the library functions available and log some results to file for post-processing analysis. After compilation, each executable informs the user of the progress achieved as it moves from each of the critical stages in the program. A sample output follows:
+```
+# Compiles all executables available, this includes documentation
+$ make
+
+# Executes nominal sample code
+gnss-intrinsics/build$ ../install/reg_standalone
+
+*** Running: trackC_standalone_reg ***
+  [Logging data into the 'plot/data_reg' directory]
+  [Cleaning up used memory]
+*** Job Completed Succesfully! ***
+
+```
+Upon completion, the user could refer to the `plot` directory where tracking results (includes correlator output, code and carrier frequency, etc) are stored for post-processing analysis using the MATLAB script `plotdata.m` inside the `plot` directory.

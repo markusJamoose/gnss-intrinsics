@@ -112,21 +112,21 @@ int main() {
   accInt = getDoubleFromFile("../data/accTime.bin");
 
   // Declare outputs
-  double carrFreq_output[codePeriods];
-  double codeFreq_output[codePeriods];
-  double absoluteSample_output[codePeriods];
-  double codeError_output[codePeriods];
-  double codeNco_output[codePeriods];
-  double carrError_output[codePeriods];
-  double carrNco_output[codePeriods];
-  double I_E_output[codePeriods];
-  double I_P_output[codePeriods];
-  double I_L_output[codePeriods];
-  double Q_E_output[codePeriods];
-  double Q_P_output[codePeriods];
-  double Q_L_output[codePeriods];
-  double VSMIndex[codePeriods / vsmInterval];
-  double VSMValue[codePeriods / vsmInterval];
+  double *carrFreq_output = calloc(codePeriods, sizeof(double));
+  double *codeFreq_output = calloc(codePeriods, sizeof(double));
+  double *absoluteSample_output = calloc(codePeriods, sizeof(double));
+  double *codeError_output = calloc(codePeriods, sizeof(double));
+  double *codeNco_output = calloc(codePeriods, sizeof(double));
+  double *carrError_output = calloc(codePeriods, sizeof(double));
+  double *carrNco_output = calloc(codePeriods, sizeof(double));
+  double *I_E_output = calloc(codePeriods, sizeof(double));
+  double *I_P_output = calloc(codePeriods, sizeof(double));
+  double *I_L_output = calloc(codePeriods, sizeof(double));
+  double *Q_E_output = calloc(codePeriods, sizeof(double));
+  double *Q_P_output = calloc(codePeriods, sizeof(double));
+  double *Q_L_output = calloc(codePeriods, sizeof(double));
+  double *VSMIndex = calloc(codePeriods / vsmInterval, sizeof(double));
+  double *VSMValue = calloc(codePeriods / vsmInterval, sizeof(double));
 
   // Allocate memory for the signal
   rawSignal = calloc(dataAdaptCoeff * blksize, sizeof(char));
@@ -301,7 +301,7 @@ int main() {
     Q_L_output[loopcount] = Q_L;                       // Q_L
   }
 
-  fclose(fpdata);
+  // Log tracking results to file
   printf(
       "  [Logging data into the 'plot/data_avx2_32i_add_32i_mul' directory]\n");
 
@@ -332,7 +332,27 @@ int main() {
   write_file_fl64("../plot/data_avx2_32i_add_32i_mul/Q_L_output.bin",
                   Q_L_output);
 
-  printf("*** Job Completed Succesfully! ***\n\n");
+  // Clearing up memory
+  printf("  [Cleaning up used memory]\n");
+  fclose(fpdata);
+  free(rawSignal);
+  free(carrFreq_output);
+  free(codeFreq_output);
+  free(absoluteSample_output);
+  free(codeError_output);
+  free(codeNco_output);
+  free(carrError_output);
+  free(carrNco_output);
+  free(I_E_output);
+  free(I_P_output);
+  free(I_L_output);
+  free(Q_E_output);
+  free(Q_P_output);
+  free(Q_L_output);
+  free(VSMIndex);
+  free(VSMValue);
 
+  // Exit the program
+  printf("*** Job Completed Succesfully! ***\n\n");
   return EXIT_SUCCESS;
 }
