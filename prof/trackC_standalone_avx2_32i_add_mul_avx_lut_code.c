@@ -137,8 +137,16 @@ int main() {
     cos_LUT_si32[i] = (int32_t)(10.0 * cosf(2.0f * pi * (float)i / lutSize));
   }
 
-  // START MAIN LOOP
+  int sec_count = 0;
+  printf("\n*** Running: trackC_standalone_avx2_32i_add_mul_avx_lut_code "
+         "***\n");
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
+
+    if (loopcount == 1000 * sec_count) {
+      printf("  [Completed: %d seconds]\r", sec_count);
+      fflush(stdout);
+      sec_count += 1;
+    }
 
     I_E = 0;
     Q_E = 0;
@@ -279,6 +287,8 @@ int main() {
   } // end for
 
   fclose(fpdata);
+  printf("  [Logging data into the "
+         "'plot/data_avx2_32i_add_mul_avx_lut_code' directory]\n");
 
   // Clearing unused variables for logging operations
   write_file_fl64(
@@ -315,5 +325,7 @@ int main() {
   write_file_fl64("../plot/data_avx2_32i_add_mul_avx_lut_code/Q_L_output.bin",
                   Q_L_output);
 
-  return 0;
+  printf("*** Job Completed Succesfully! ***\n\n");
+
+  return EXIT_SUCCESS;
 }

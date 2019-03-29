@@ -126,7 +126,15 @@ int main() {
   fpdata = fopen(fileid, "rb");
   fseek(fpdata, dataAdaptCoeff * seekvalue, SEEK_SET);
 
+  int sec_count = 0;
+  printf("\n*** Running: trackC_standalone_reg ***\n");
   for (loopcount = 0; loopcount < codePeriods; loopcount++) {
+
+    if (loopcount == 1000 * sec_count) {
+      printf("  [Completed: %d seconds]\r", sec_count);
+      fflush(stdout);
+      sec_count += 1;
+    }
 
     I_E = 0;
     Q_E = 0;
@@ -267,6 +275,8 @@ int main() {
   }
   fclose(fpdata);
 
+  printf("  [Logging data into the 'plot/data_reg' directory]\n");
+
   // Clearing unused variables for logging operations
   write_file_fl64("../plot/data_reg/codeNco_output.bin", codeNco_output);
   write_file_fl64("../plot/data_reg/codeError_output.bin", codeError_output);
@@ -282,6 +292,8 @@ int main() {
   write_file_fl64("../plot/data_reg/Q_E_output.bin", Q_E_output);
   write_file_fl64("../plot/data_reg/Q_P_output.bin", Q_P_output);
   write_file_fl64("../plot/data_reg/Q_L_output.bin", Q_L_output);
+
+  printf("*** Job Completed Succesfully! ***\n\n");
 
   return EXIT_SUCCESS;
 }
